@@ -69,9 +69,9 @@
   // ───────────────────────── data layer ─────────────────────────
   function defaultSettings() {
     return {
-      farmName: 'Deswal Dairy Farm',
+      farmName: 'Your Dairy Farm',
       tagline: 'जय दादा बिशादे की',
-      contactMobile: '9812xxx174',
+      contactMobile: '999999999',
       paymentNumber: '',
       defaultRate: 80
     };
