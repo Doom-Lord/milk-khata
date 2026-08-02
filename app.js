@@ -1078,25 +1078,104 @@
     const html = buildNumbersStyleLedgerDocument(ym, buyers);
     const w = window.open('', '_blank');
     if (!w) {
-      showToast('Pop-up blocked — allow pop-ups to save PDF');
+      showToast('Pop-up blocked — allow pop-ups for Print');
       return;
     }
     w.document.open();
     w.document.write(html);
     w.document.close();
-    // Wait for fonts, then open print (Save as PDF = vector, 1 landscape A4)
     const trigger = () => {
-      try {
-        w.focus();
-        w.print();
-      } catch (e) {
-        console.error(e);
-      }
+      try { w.focus(); w.print(); } catch (e) { console.error(e); }
     };
     if (w.document.fonts && w.document.fonts.ready) {
       w.document.fonts.ready.then(() => setTimeout(trigger, 150)).catch(() => setTimeout(trigger, 450));
     } else {
       setTimeout(trigger, 500);
+    }
+  }
+
+  function loadLedgerHtmlInFrame(html, widthPx, heightPx) {
+    return new Promise((resolve, reject) => {
+      const iframe = document.createElement('iframe');
+      iframe.setAttribute('aria-hidden', 'true');
+      iframe.style.cssText = 'position:fixed;left:-14000px;top:0;width:' + widthPx + 'px;height:' + heightPx + 'px;border:0;opacity:0;pointer-events:none;';
+      document.body.appendChild(iframe);
+      const doc = iframe.contentDocument;
+      if (!doc) {
+        iframe.remove();
+        reject(new Error('iframe unavailable'));
+        return;
+      }
+      doc.open();
+      doc.write(html);
+      doc.close();
+
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        resolve(iframe);
+      };
+
+      const waitFonts = () => {
+        if (doc.fonts && doc.fonts.ready) {
+          doc.fonts.ready.then(() => setTimeout(finish, 250)).catch(() => setTimeout(finish, 500));
+        } else {
+          setTimeout(finish, 600);
+        }
+      };
+
+      iframe.onload = waitFonts;
+      setTimeout(waitFonts, 100);
+    });
+  }
+
+  async function downloadNumbersStyleLedgerPdf(ym, buyers) {
+    const jspdfNS = window.jspdf;
+    if (typeof html2canvas !== 'function' || !jspdfNS || !jspdfNS.jsPDF) {
+      showToast('PDF tools not loaded — try Print');
+      return;
+    }
+
+    // A4 landscape CSS pixels at ~160dpi for sharp but single-page output
+    const pageWpx = 1680;
+    const pageHpx = 1188;
+    const html = buildNumbersStyleLedgerDocument(ym, buyers).replace(
+      '<div class="sheet">',
+      '<div class="sheet" style="width:' + pageWpx + 'px;height:' + pageHpx + 'px;padding:10px 12px;overflow:hidden;">'
+    );
+
+    showToast('Creating PDF…');
+    let iframe = null;
+    try {
+      iframe = await loadLedgerHtmlInFrame(html, pageWpx, pageHpx);
+      const sheet = iframe.contentDocument.querySelector('.sheet');
+      if (!sheet) throw new Error('ledger sheet missing');
+
+      const canvas = await html2canvas(sheet, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        width: pageWpx,
+        height: pageHpx,
+        windowWidth: pageWpx,
+        windowHeight: pageHpx,
+        useCORS: true,
+        logging: false
+      });
+
+      const { jsPDF } = jspdfNS;
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 5;
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', margin, margin, pageW - margin * 2, pageH - margin * 2);
+      pdf.save('milk-khata-ledger-' + ym + '.pdf');
+      showToast('PDF downloaded ✅');
+    } catch (err) {
+      console.error(err);
+      showToast('PDF download failed — try Print');
+    } finally {
+      if (iframe && iframe.parentNode) iframe.parentNode.removeChild(iframe);
     }
   }
 
@@ -1120,8 +1199,7 @@
         showToast('Open a month with buyers first');
         return;
       }
-      showToast('Print dialog → Destination: Save as PDF · Landscape A4');
-      openNumbersStyleLedgerPrint(ym, buyers);
+      downloadNumbersStyleLedgerPdf(ym, buyers);
     });
   }
 
