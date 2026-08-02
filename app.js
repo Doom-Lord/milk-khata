@@ -1109,7 +1109,6 @@
     bindReceipt();
     bindBackup();
 
-    $('newBuyerRate').value = DB.settings.defaultRate || 80;
     updateBrandSubtitle();
     renderEntry();
   }
