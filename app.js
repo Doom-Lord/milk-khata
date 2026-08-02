@@ -380,7 +380,8 @@
             <input type="number" step="0.5" min="0" inputmode="decimal" data-fin="rate" value="${fmtNum(rateVal)}" ${b.active ? '' : 'disabled'}>
           </label>
           <label>Prev. balance
-            <input type="number" step="1" inputmode="decimal" data-fin="openingBalance" value="${fmtNum(openingVal)}" title="Positive = due (adds). Negative = advance (deducts)." ${b.active && monthData.buyers[b.id] ? '' : 'disabled'}>
+            <input type="number" step="1" inputmode="decimal" data-fin="openingBalance" value="${fmtNum(openingVal)}" title="Negative (−) = paid this much less last month" ${b.active && monthData.buyers[b.id] ? '' : 'disabled'}>
+            <small class="mk-fin-note">− (minus) = paid this much less last month</small>
           </label>
         </div>
         <div class="mk-buyer-actions">
