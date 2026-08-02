@@ -381,7 +381,6 @@
           </label>
           <label>Prev. balance
             <input type="number" step="1" inputmode="decimal" data-fin="openingBalance" value="${fmtNum(openingVal)}" title="Negative (−) = paid this much less last month" ${b.active && monthData.buyers[b.id] ? '' : 'disabled'}>
-            <small class="mk-fin-note">− (minus) = paid this much less last month</small>
           </label>
         </div>
         <div class="mk-buyer-actions">
