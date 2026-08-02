@@ -833,10 +833,11 @@
     const pageLabel = opts.pageLabel || '';
 
     let html = `
+      <div class="mk-ledger-title-wrap"><div class="mk-ledger-title">| ${escapeHtml((s.farmName || 'Dairy Farm').toUpperCase())} |</div></div>
       <div class="mk-ledger-header">
-        <div class="mk-ledger-header-farm">${escapeHtml(s.farmName || 'Dairy Farm')}</div>
         <div class="mk-ledger-header-month">${escapeHtml(monthLabel(ym))}</div>
-        <div class="mk-ledger-header-phone">${s.contactMobile ? escapeHtml(s.contactMobile) : ''}</div>
+        <div></div>
+        <div class="mk-ledger-header-phone">${s.contactMobile ? 'Mob. ' + escapeHtml(s.contactMobile) : ''}</div>
       </div>
       <table class="mk-ledger-table"><thead><tr><th>Date</th>`;
 
@@ -899,230 +900,208 @@
     host.innerHTML = `<div class="mk-ledger-wrap" id="ledgerSheet">${buildLedgerInnerHtml(ym, buyers)}</div>`;
   }
 
-  // Cached Devanagari font (base64) for vector PDF buyer names
-  let pdfFontB64 = null;
-  let pdfFontLoading = null;
-
-  function arrayBufferToBase64(buffer) {
-    const bytes = new Uint8Array(buffer);
-    const chunk = 0x8000;
-    let binary = '';
-    for (let i = 0; i < bytes.length; i += chunk) {
-      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
-    }
-    return btoa(binary);
-  }
-
-  async function loadPdfDevanagariFont() {
-    if (pdfFontB64) return pdfFontB64;
-    if (pdfFontLoading) return pdfFontLoading;
-    pdfFontLoading = (async () => {
-      const staticUrls = [
-        'https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@main/hinted/ttf/NotoSansDevanagari/NotoSansDevanagari-Regular.ttf'
-      ];
-      let lastErr = null;
-      for (let i = 0; i < staticUrls.length; i++) {
-        try {
-          const res = await fetch(staticUrls[i]);
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          const buf = await res.arrayBuffer();
-          pdfFontB64 = arrayBufferToBase64(buf);
-          return pdfFontB64;
-        } catch (e) {
-          lastErr = e;
-        }
-      }
-      throw lastErr || new Error('Font download failed');
-    })();
-    try {
-      return await pdfFontLoading;
-    } finally {
-      pdfFontLoading = null;
-    }
-  }
-
-  function registerPdfFont(pdf, b64) {
-    pdf.addFileToVFS('NotoSansDevanagari-Regular.ttf', b64);
-    pdf.addFont('NotoSansDevanagari-Regular.ttf', 'NotoSansDevanagari', 'normal');
-  }
-
-  function fitPdfText(pdf, text, maxW, fontSize) {
-    let s = String(text == null ? '' : text);
-    if (!s) return '';
-    pdf.setFont('NotoSansDevanagari', 'normal');
-    pdf.setFontSize(fontSize);
-    if (pdf.getTextWidth(s) <= maxW) return s;
-    while (s.length > 1 && pdf.getTextWidth(s + '…') > maxW) {
-      s = s.slice(0, -1);
-    }
-    return s + '…';
-  }
-
-  function drawLedgerVectorPdf(pdf, ym, buyers) {
+  function buildNumbersStyleLedgerDocument(ym, buyers) {
     const monthData = DB.months[ym];
-    const { year, month } = parseYearMonth(ym);
-    const numDays = daysInMonth(year, month);
     const s = DB.settings;
-
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const margin = 4.5;
-    const left = margin;
-    const top = margin;
-    const right = pageW - margin;
-    const bottom = pageH - margin;
-    const width = right - left;
-
-    // Title band
-    const titleH = 7.5;
-    const totalsH = 5.5;
-    const tableTop = top + titleH;
-    const tableBottom = bottom - totalsH;
-    const tableH = tableBottom - tableTop;
-
-    // Columns: Date + equal buyer columns (all on one landscape page)
-    const dateW = Math.max(11, Math.min(13, width * 0.04));
-    const buyerW = (width - dateW) / Math.max(buyers.length, 1);
-
-    // Buyer names drawn vertically so they stay legible on one page
-    const nameFont = buyerW >= 12 ? 9 : buyerW >= 9 ? 8 : 7;
-    pdf.setFont('NotoSansDevanagari', 'normal');
-    pdf.setFontSize(nameFont);
-    let longestNameW = 0;
-    buyers.forEach((b) => {
-      const w = pdf.getTextWidth(String(b.name || ''));
-      if (w > longestNameW) longestNameW = w;
-    });
-    // Header row tall enough for full rotated names (+ padding)
-    const nameHeaderH = Math.min(48, Math.max(24, longestNameW + 5));
-
-    const footerCount = 5;
-    const bodyRows = numDays + footerCount;
-    const bodyH = tableH - nameHeaderH;
-    const rowH = bodyH / bodyRows;
-    const fontSize = Math.min(7.5, Math.max(4.5, rowH * 0.7));
+    const farm = (s.farmName || 'Dairy Farm').toUpperCase();
+    const phone = s.contactMobile || '';
+    const mLabel = monthLabel(ym);
+    const numDays = 31; // Numbers sheet always shows 1–31
+    const realDays = daysInMonth(parseYearMonth(ym).year, parseYearMonth(ym).month);
 
     const calcs = buyers.map((b) =>
       calcBuyer(monthData.buyers[b.id] || { rate: 0, openingBalance: 0, adjustment: 0, days: {} })
     );
-    let farmLitres = 0, farmAmount = 0, farmNet = 0;
-    calcs.forEach((c) => {
-      farmLitres += c.total;
-      farmAmount += c.amount;
-      farmNet += c.net;
+
+    let head = '<tr><th class="date-col">Date</th>';
+    buyers.forEach((b) => {
+      head += '<th class="buyer-col"><div class="vname">' + escapeHtml(b.name) + '</div></th>';
     });
+    head += '</tr>';
 
-    pdf.setDrawColor(0);
-    pdf.setTextColor(0);
-    pdf.setFillColor(255, 255, 255);
-    pdf.setLineWidth(0.25);
-
-    // Title: farm | month | phone
-    pdf.setFont('NotoSansDevanagari', 'normal');
-    pdf.setFontSize(11);
-    pdf.text(fitPdfText(pdf, s.farmName || 'Dairy Farm', width * 0.34, 11), left, top + 4.8, { align: 'left' });
-    pdf.setFontSize(10);
-    pdf.text(fitPdfText(pdf, monthLabel(ym), width * 0.3, 10), left + width / 2, top + 4.8, { align: 'center' });
-    pdf.setFontSize(9);
-    pdf.text(fitPdfText(pdf, s.contactMobile || '', width * 0.34, 9), right, top + 4.8, { align: 'right' });
-    pdf.setLineWidth(0.4);
-    pdf.line(left, top + titleH - 1, right, top + titleH - 1);
-
-    function colX(i) {
-      return left + dateW + i * buyerW;
-    }
-
-    function drawCellText(str, x, y, w, align, size) {
-      pdf.setFont('NotoSansDevanagari', 'normal');
-      pdf.setFontSize(size);
-      const t = fitPdfText(pdf, str, w - 1.0, size);
-      const tx = align === 'center' ? x + w / 2 : align === 'right' ? x + w - 0.5 : x + 0.5;
-      pdf.text(t, tx, y, { align: align || 'left' });
-    }
-
-    // Table border
-    pdf.setLineWidth(0.25);
-    pdf.rect(left, tableTop, width, tableH);
-
-    // Vertical grid lines
-    pdf.line(left + dateW, tableTop, left + dateW, tableBottom);
-    for (let i = 1; i < buyers.length; i++) {
-      pdf.line(colX(i), tableTop, colX(i), tableBottom);
-    }
-
-    // Name header separator
-    const nameBottom = tableTop + nameHeaderH;
-    pdf.line(left, nameBottom, right, nameBottom);
-
-    // "Date" label in name header (horizontal)
-    drawCellText('Date', left, tableTop + nameHeaderH / 2 + fontSize * 0.25, dateW, 'center', Math.min(8, fontSize + 1));
-
-    // Buyer names — vertical (90°), bottom-up, larger type, full name when possible
-    pdf.setFont('NotoSansDevanagari', 'normal');
-    pdf.setFontSize(nameFont);
-    buyers.forEach((b, i) => {
-      const name = String(b.name || '');
-      const maxH = nameHeaderH - 3;
-      const label = fitPdfText(pdf, name, maxH, nameFont);
-      const cx = colX(i) + buyerW / 2 + nameFont * 0.12;
-      const by = nameBottom - 1.5;
-      // angle 90 = vertical text reading upward
-      pdf.text(label, cx, by, { angle: 90, align: 'left' });
-    });
-
-    // Body rows: days then footers
-    function bodyTextY(bodyRow) {
-      return nameBottom + bodyRow * rowH + rowH * 0.68;
-    }
-
+    let body = '';
     for (let d = 1; d <= numDays; d++) {
-      const bodyRow = d - 1;
-      pdf.line(left, nameBottom + (bodyRow + 1) * rowH, right, nameBottom + (bodyRow + 1) * rowH);
-      drawCellText(String(d), left, bodyTextY(bodyRow), dateW, 'center', fontSize);
-      buyers.forEach((b, i) => {
-        const entry = monthData.buyers[b.id];
-        const val = entry && entry.days ? entry.days[String(d)] : undefined;
-        const display = (val === undefined || val === null || val === '') ? '' : fmtNum(val);
-        drawCellText(display, colX(i), bodyTextY(bodyRow), buyerW, 'center', fontSize);
+      const inMonth = d <= realDays;
+      body += '<tr' + (d % 2 === 0 ? ' class="alt"' : '') + '><td class="date-col">' + (inMonth ? d : '') + '</td>';
+      buyers.forEach((b) => {
+        let display = '';
+        if (inMonth) {
+          const entry = monthData.buyers[b.id];
+          const val = entry && entry.days ? entry.days[String(d)] : undefined;
+          if (val !== undefined && val !== null && val !== '') display = fmtNum(val);
+        }
+        body += '<td>' + display + '</td>';
       });
+      body += '</tr>';
     }
 
-    const footers = ledgerFooterRows();
-    footers.forEach((fr, fi) => {
-      const bodyRow = numDays + fi;
-      if (fi < footers.length - 1) {
-        pdf.line(left, nameBottom + (bodyRow + 1) * rowH, right, nameBottom + (bodyRow + 1) * rowH);
-      }
-      drawCellText(fr.label, left, bodyTextY(bodyRow), dateW, 'center', Math.max(4.2, fontSize - 0.2));
-      calcs.forEach((c, i) => {
-        drawCellText(fr.get(c), colX(i), bodyTextY(bodyRow), buyerW, 'center', fontSize);
-      });
+    const footDefs = [
+      { label: 'Total', get: (c) => fmtNum(c.total), cls: 'foot' },
+      { label: 'Rate', get: (c) => fmtNum(c.rate), cls: 'foot' },
+      { label: 'Amount', get: (c) => fmtNum(c.amount), cls: 'foot' },
+      { label: 'Balance', get: (c) => {
+        const bal = c.opening + c.adj;
+        return bal === 0 ? '' : fmtNum(bal);
+      }, cls: 'foot' },
+      { label: 'NET', get: (c) => fmtNum(c.net), cls: 'foot net' }
+    ];
+    let foot = '';
+    footDefs.forEach((fr) => {
+      foot += '<tr class="' + fr.cls + '"><td class="date-col">' + fr.label + '</td>';
+      calcs.forEach((c) => { foot += '<td>' + fr.get(c) + '</td>'; });
+      foot += '</tr>';
     });
 
-    // Farm totals
-    pdf.setFont('NotoSansDevanagari', 'normal');
-    pdf.setFontSize(8);
-    const totals = 'Total milk: ' + fmtNum(farmLitres) + ' L    Total Amount: ' + fmtRupee(farmAmount) + '    Total NET: ' + fmtRupee(farmNet);
-    pdf.text(fitPdfText(pdf, totals, width, 8), left, bottom - 1.2, { align: 'left' });
+    return `<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<title>${escapeHtml(farm)} — ${escapeHtml(mLabel)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@500;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4 landscape; margin: 8mm; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #fff; color: #000;
+    font-family: 'Libre Baskerville', 'Times New Roman', serif;
+  }
+  .sheet {
+    width: 100%;
+    min-height: 0;
+  }
+  .title-wrap {
+    text-align: center;
+    margin: 0 0 4px;
+  }
+  .title {
+    display: inline-block;
+    border: 1.6px solid #000;
+    padding: 3px 18px;
+    font-size: 16pt;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    font-family: 'Libre Baskerville', 'Rockwell', serif;
+  }
+  .meta {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    margin: 2px 0 6px;
+    font-size: 11pt;
+  }
+  .meta .month { text-align: left; font-weight: 700; }
+  .meta .mob { text-align: right; font-weight: 700; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 9.5pt;
+  }
+  th, td {
+    border: 0.7px solid #000;
+    text-align: center;
+    padding: 1px 2px;
+    vertical-align: middle;
+    color: #000;
+    background: #fff;
+  }
+  thead th {
+    font-family: 'Noto Sans Devanagari', 'Libre Baskerville', sans-serif;
+    font-weight: 700;
+    height: 78px;
+    font-size: 10.5pt;
+  }
+  th.date-col, td.date-col {
+    width: 42px;
+    font-weight: 700;
+    font-family: 'Libre Baskerville', serif;
+    font-size: 9.5pt;
+  }
+  .vname {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    white-space: nowrap;
+    margin: 0 auto;
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    font-weight: 700;
+    font-size: 11pt;
+    line-height: 1.05;
+    max-height: 72px;
+    overflow: hidden;
+  }
+  tbody td {
+    height: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  tr.alt td { background: #f3f3f3; }
+  tr.foot td {
+    font-weight: 700;
+    background: #fff;
+    height: 15px;
+  }
+  tr.net td {
+    font-weight: 700;
+  }
+  .page-num {
+    text-align: center;
+    font-size: 9pt;
+    margin-top: 4px;
+  }
+  @media print {
+    tr.alt td { background: #f3f3f3 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    thead { display: table-header-group; }
+    body { margin: 0; }
+  }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="title-wrap"><div class="title">| ${escapeHtml(farm)} |</div></div>
+    <div class="meta">
+      <div class="month">${escapeHtml(mLabel)}</div>
+      <div></div>
+      <div class="mob">${phone ? ('Mob. ' + escapeHtml(phone)) : ''}</div>
+    </div>
+    <table>
+      <thead>${head}</thead>
+      <tbody>${body}${foot}</tbody>
+    </table>
+    <div class="page-num">1</div>
+  </div>
+</body>
+</html>`;
+  }
+
+  function openNumbersStyleLedgerPrint(ym, buyers) {
+    const html = buildNumbersStyleLedgerDocument(ym, buyers);
+    const w = window.open('', '_blank');
+    if (!w) {
+      showToast('Pop-up blocked — allow pop-ups to save PDF');
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    // Wait for fonts, then open print (Save as PDF = vector, 1 landscape A4)
+    const trigger = () => {
+      try {
+        w.focus();
+        w.print();
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    if (w.document.fonts && w.document.fonts.ready) {
+      w.document.fonts.ready.then(() => setTimeout(trigger, 150)).catch(() => setTimeout(trigger, 450));
+    } else {
+      setTimeout(trigger, 500);
+    }
   }
 
   function bindLedger() {
     $('printLedgerBtn').addEventListener('click', () => {
-      printMode = 'ledger';
-      document.querySelectorAll('.mk-print-only').forEach((el) => el.classList.remove('mk-print-only'));
-      const host = $('ledgerHost');
-      host.classList.add('mk-print-only');
-      let styleEl = $('printPageStyle');
-      if (!styleEl) {
-        styleEl = document.createElement('style');
-        styleEl.id = 'printPageStyle';
-        document.head.appendChild(styleEl);
-      }
-      styleEl.textContent = '@page { size: landscape; margin: 8mm; }';
-      window.print();
-    });
-
-    $('downloadLedgerPdfBtn').addEventListener('click', async () => {
       const ym = getSelectedYM();
       ensureMonth(ym);
       const buyers = buyersForMonth(ym);
@@ -1130,26 +1109,19 @@
         showToast('Open a month with buyers first');
         return;
       }
-      const jspdfNS = window.jspdf;
-      if (!jspdfNS || !jspdfNS.jsPDF) {
-        showToast('PDF tools not loaded — try Print instead');
+      openNumbersStyleLedgerPrint(ym, buyers);
+    });
+
+    $('downloadLedgerPdfBtn').addEventListener('click', () => {
+      const ym = getSelectedYM();
+      ensureMonth(ym);
+      const buyers = buyersForMonth(ym);
+      if (!buyers.length) {
+        showToast('Open a month with buyers first');
         return;
       }
-
-      showToast('Creating PDF…');
-      try {
-        const b64 = await loadPdfDevanagariFont();
-        const { jsPDF } = jspdfNS;
-        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-        registerPdfFont(pdf, b64);
-        drawLedgerVectorPdf(pdf, ym, buyers);
-        // Always exactly one landscape A4 page (vector text/lines — no images)
-        pdf.save(`milk-khata-ledger-${ym}-vector-A4.pdf`);
-        showToast('1-page vector PDF downloaded ✅');
-      } catch (err) {
-        console.error(err);
-        showToast('Vector PDF failed — check internet (font load) and retry');
-      }
+      showToast('Print dialog → Destination: Save as PDF · Landscape A4');
+      openNumbersStyleLedgerPrint(ym, buyers);
     });
   }
 

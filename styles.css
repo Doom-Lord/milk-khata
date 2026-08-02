@@ -354,6 +354,14 @@ body{
   box-shadow: 0 4px 14px var(--shadow);
   overflow: auto;
 }
+.mk-ledger-title-wrap{ text-align:center; margin-bottom: 6px; }
+.mk-ledger-title{
+  display:inline-block;
+  border: 1.5px solid var(--red-deep);
+  padding: 4px 16px;
+  font-family:'Zilla Slab', Georgia, serif;
+  font-size: 18px; font-weight: 700; color: var(--red-deep);
+}
 .mk-ledger-header{
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -361,7 +369,7 @@ body{
   gap: 8px;
   margin-bottom: 10px;
   padding-bottom: 6px;
-  border-bottom: 2px solid var(--red);
+  border-bottom: 1px solid var(--paper-margin);
 }
 .mk-ledger-header-farm{
   font-family:'Zilla Slab', Georgia, serif;
@@ -371,11 +379,11 @@ body{
 .mk-ledger-header-month{
   font-family:'Zilla Slab', Georgia, serif;
   font-size: 15px; font-weight: 700; margin:0;
-  color:var(--ink); text-align:center; white-space:nowrap;
+  color:var(--ink); text-align:left; white-space:nowrap;
 }
 .mk-ledger-header-phone{
   font-size: 13px; margin:0; color:var(--ink-soft);
-  text-align:right; white-space:nowrap;
+  text-align:right; white-space:nowrap; font-weight: 600;
 }
 .mk-ledger-table{ font-size: 12px; }
 .mk-ledger-table .mk-col-buyer{ min-width: 70px; }
