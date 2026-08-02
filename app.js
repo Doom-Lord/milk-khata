@@ -665,7 +665,7 @@
     }
 
     // Grid
-    let html = '<p class="mk-entry-tip">💡 Tap a cell to enter litres. <b>Enter</b> = next day same buyer · <b>Tab</b> = next buyer.</p>';
+    let html = '<p class="mk-entry-tip">💡 <b>Enter</b> = next day same buyer · <b>Tab</b> = next buyer · <b>Backspace</b> = clear cell</p>';
     html += '<div class="mk-grid-scroll"><table class="mk-entry-table"><thead><tr><th>Date</th>';
     buyers.forEach((b) => {
       html += `<th class="mk-col-buyer">${escapeHtml(b.name)}</th>`;
