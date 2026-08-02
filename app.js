@@ -47,9 +47,26 @@
     return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
   }
 
+  /** Default working month = previous calendar month (milk sold last month). */
+  function previousYM() {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+
   function monthLabel(ym) {
     const { year, month } = parseYearMonth(ym);
     return MONTH_NAMES[month] + ' ' + year;
+  }
+
+  function shortMonth(m0) {
+    return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m0];
+  }
+
+  let selectedYM = previousYM();
+
+  function getSelectedYM() {
+    return selectedYM || previousYM();
   }
 
   function prevYM(ym) {
@@ -217,32 +234,87 @@
     showPanel(btn.dataset.panel);
   });
 
-  // Sync month selectors
-  function syncMonthInputs(ym) {
-    ['entryMonth', 'ledgerMonth', 'receiptMonth', 'buyersMonth'].forEach((id) => {
-      const el = $(id);
-      if (el && el.value !== ym) el.value = ym;
+  // ───────────────────────── Month picker (Jan–Dec buttons) ─────────────────────────
+  const MONTH_PICKER_IDS = [
+    'entryMonthPicker',
+    'ledgerMonthPicker',
+    'receiptMonthPicker',
+    'buyersMonthPicker'
+  ];
+
+  function setSelectedYM(ym, source) {
+    if (!ym) return;
+    selectedYM = ym;
+    updateAllMonthPickers();
+    const src = source || currentPanel;
+    if (src === 'entry') renderEntry();
+    else if (src === 'ledger') renderLedger();
+    else if (src === 'receipt') renderReceiptForm();
+    else if (src === 'buyers') renderBuyers();
+  }
+
+  function paintMonthPicker(host, ym) {
+    if (!host) return;
+    const { year, month } = parseYearMonth(ym);
+    host.innerHTML = `
+      <div class="mk-year-wrap">
+        <button type="button" class="mk-year-nav" data-year-delta="-1" aria-label="Previous year">‹</button>
+        <span class="mk-year-label">${year}</span>
+        <button type="button" class="mk-year-nav" data-year-delta="1" aria-label="Next year">›</button>
+      </div>
+      <div class="mk-month-btns">
+        ${Array.from({ length: 12 }, (_, i) => {
+          const active = i === month ? ' mk-month-btn--active' : '';
+          return `<button type="button" class="mk-month-btn${active}" data-month="${i + 1}">${shortMonth(i)}</button>`;
+        }).join('')}
+      </div>`;
+  }
+
+  function updateAllMonthPickers() {
+    const ym = getSelectedYM();
+    MONTH_PICKER_IDS.forEach((id) => paintMonthPicker($(id), ym));
+  }
+
+  function pickerSource(host) {
+    if (!host || !host.id) return '';
+    if (host.id.indexOf('entry') === 0) return 'entry';
+    if (host.id.indexOf('ledger') === 0) return 'ledger';
+    if (host.id.indexOf('receipt') === 0) return 'receipt';
+    if (host.id.indexOf('buyers') === 0) return 'buyers';
+    return '';
+  }
+
+  function bindMonthPickers() {
+    selectedYM = previousYM();
+    updateAllMonthPickers();
+
+    MONTH_PICKER_IDS.forEach((id) => {
+      const host = $(id);
+      if (!host) return;
+      host.addEventListener('click', (e) => {
+        const yearBtn = e.target.closest('[data-year-delta]');
+        const monthBtn = e.target.closest('[data-month]');
+        const { year, month } = parseYearMonth(getSelectedYM());
+        const source = pickerSource(host);
+
+        if (yearBtn) {
+          const delta = parseInt(yearBtn.dataset.yearDelta, 10);
+          const next = (year + delta) + '-' + String(month + 1).padStart(2, '0');
+          setSelectedYM(next, source);
+          return;
+        }
+        if (monthBtn) {
+          const m = parseInt(monthBtn.dataset.month, 10);
+          const next = year + '-' + String(m).padStart(2, '0');
+          setSelectedYM(next, source);
+        }
+      });
     });
   }
 
-  function initMonthInputs() {
-    const ym = currentYM();
-    syncMonthInputs(ym);
-    $('entryMonth').addEventListener('change', () => {
-      syncMonthInputs($('entryMonth').value);
-      renderEntry();
-    });
-    $('ledgerMonth').addEventListener('change', () => {
-      syncMonthInputs($('ledgerMonth').value);
-      renderLedger();
-    });
-    $('receiptMonth').addEventListener('change', () => {
-      syncMonthInputs($('receiptMonth').value);
-    });
-    $('buyersMonth').addEventListener('change', () => {
-      syncMonthInputs($('buyersMonth').value);
-      renderBuyers();
-    });
+  // Keep old name as alias used nowhere after refactor — sync helper for callers
+  function syncMonthInputs(ym) {
+    setSelectedYM(ym || getSelectedYM());
   }
 
   // ───────────────────────── Settings ─────────────────────────
@@ -342,7 +414,7 @@
     updatePasteBuyersTip();
     const list = $('buyerList');
     const buyers = allBuyersSorted();
-    const ym = ($('buyersMonth') && $('buyersMonth').value) || currentYM();
+    const ym = getSelectedYM();
     ensureMonth(ym);
     saveData(DB);
     const monthData = DB.months[ym];
@@ -485,7 +557,7 @@
         showToast(buyers[idx].active ? 'Buyer active ✅' : 'Buyer inactive (history kept)');
       }
       if (act === 'edit') {
-        const ym = ($('buyersMonth') && $('buyersMonth').value) || currentYM();
+        const ym = getSelectedYM();
         ensureMonth(ym);
         const entry = DB.months[ym].buyers[buyers[idx].id] || {
           rate: buyers[idx].defaultRate,
@@ -508,7 +580,7 @@
       const id = item.dataset.id;
       const buyer = DB.buyers.find((b) => b.id === id);
       if (!buyer || !buyer.active) return;
-      const ym = ($('buyersMonth') && $('buyersMonth').value) || currentYM();
+      const ym = getSelectedYM();
       ensureMonth(ym);
       const field = input.dataset.fin;
       const val = input.value === '' ? 0 : parseFloat(input.value) || 0;
@@ -547,7 +619,7 @@
       }
       b.name = name;
       b.defaultRate = rate;
-      const ym = ($('buyersMonth') && $('buyersMonth').value) || currentYM();
+      const ym = getSelectedYM();
       ensureMonth(ym);
       if (DB.months[ym].buyers[id]) {
         DB.months[ym].buyers[id].rate = rate;
@@ -562,7 +634,7 @@
 
   // ───────────────────────── Entry grid ─────────────────────────
   function renderEntry() {
-    const ym = $('entryMonth').value || currentYM();
+    const ym = getSelectedYM();
     const { year, month } = parseYearMonth(ym);
     const numDays = daysInMonth(year, month);
     ensureMonth(ym);
@@ -631,7 +703,7 @@
   }
 
   function refreshEntryFooter() {
-    const ym = $('entryMonth').value;
+    const ym = getSelectedYM();
     const monthData = DB.months[ym];
     if (!monthData) return;
     const buyers = buyersForMonth(ym);
@@ -650,16 +722,25 @@
 
   function bindEntry() {
     $('jumpTodayBtn').addEventListener('click', () => {
-      const ym = currentYM();
-      syncMonthInputs(ym);
+      // Keep working month (defaults to previous month); jump to today if that
+      // month is current, otherwise to the last day of the selected month.
+      const ym = getSelectedYM();
       renderEntry();
       if (!buyersForMonth(ym).length) {
         showPanel('buyers');
         showToast('Add buyers first');
         return;
       }
-      const today = new Date().getDate();
-      const row = $('entry-day-' + today);
+      const { year, month } = parseYearMonth(ym);
+      const now = new Date();
+      const numDays = daysInMonth(year, month);
+      let day;
+      if (now.getFullYear() === year && now.getMonth() === month) {
+        day = Math.min(now.getDate(), numDays);
+      } else {
+        day = numDays;
+      }
+      const row = $('entry-day-' + day);
       if (row) {
         row.scrollIntoView({ behavior: 'smooth', block: 'center' });
         const firstInput = row.querySelector('input');
@@ -668,13 +749,13 @@
           firstInput.select();
         }
       }
-      showToast("Today's row ready — enter milk");
+      showToast(monthLabel(ym) + ' — ready to enter milk');
     });
 
     $('entryGridHost').addEventListener('input', (e) => {
       const input = e.target;
       if (!input.matches('input[data-buyer]')) return;
-      const ym = $('entryMonth').value;
+      const ym = getSelectedYM();
       ensureMonth(ym);
       const buyerId = input.dataset.buyer;
       const day = input.dataset.day;
@@ -699,7 +780,7 @@
       e.preventDefault();
       const col = parseInt(input.dataset.col, 10);
       const day = parseInt(input.dataset.day, 10);
-      const ym = $('entryMonth').value;
+      const ym = getSelectedYM();
       const buyers = buyersForMonth(ym);
       const { year, month } = parseYearMonth(ym);
       const numDays = daysInMonth(year, month);
@@ -731,7 +812,7 @@
 
   // ───────────────────────── Ledger ─────────────────────────
   function renderLedger() {
-    const ym = $('ledgerMonth').value || currentYM();
+    const ym = getSelectedYM();
     const { year, month } = parseYearMonth(ym);
     const numDays = daysInMonth(year, month);
     ensureMonth(ym);
@@ -833,7 +914,7 @@
     const sel = $('receiptBuyer');
     const buyers = activeBuyersSorted();
     // Also include inactive buyers that have data in selected month
-    const ym = $('receiptMonth').value || currentYM();
+    const ym = getSelectedYM();
     const monthBuyers = (DB.months[ym] && DB.months[ym].buyers) || {};
     const idsInMonth = Object.keys(monthBuyers);
     const options = [];
@@ -962,7 +1043,7 @@
   function bindReceipt() {
     $('generateBtn').addEventListener('click', () => {
       const buyerId = $('receiptBuyer').value;
-      const ym = $('receiptMonth').value;
+      const ym = getSelectedYM();
       const err = $('receiptFormError');
       if (!buyerId) { err.textContent = 'Please select a buyer.'; return; }
       if (!ym) { err.textContent = 'Please select a month.'; return; }
@@ -1139,7 +1220,7 @@
 
   // ───────────────────────── init ─────────────────────────
   function init() {
-    initMonthInputs();
+    bindMonthPickers();
     bindSettings();
     bindBuyers();
     bindEntry();

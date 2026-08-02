@@ -38,11 +38,11 @@
         <p>Daily milk only — rate and balances are on the Buyers tab</p>
       </div>
       <div class="mk-toolbar">
-        <label class="mk-tip" for="entryMonth">Month</label>
-        <input type="month" id="entryMonth" class="mk-input-inline">
         <button type="button" class="mk-btn mk-btn--primary mk-btn--sm" id="jumpTodayBtn">✍️ Enter today's milk</button>
       </div>
     </div>
+    <div id="entryMonthPicker" class="mk-month-picker mk-month-picker--bar" data-role="month-picker"></div>
+    <p class="mk-entry-tip">Defaults to <b>last month</b> (milk you sold then). Tap Jan–Dec to switch.</p>
     <div id="entryGridHost"></div>
     <div id="entryTotals" class="mk-totals-bar"></div>
   </section>
@@ -55,10 +55,10 @@
         <p>Full register — Print / PDF (landscape)</p>
       </div>
       <div class="mk-toolbar">
-        <input type="month" id="ledgerMonth" class="mk-input-inline">
         <button type="button" class="mk-btn mk-btn--primary" id="printLedgerBtn">🖨️ Print / PDF</button>
       </div>
     </div>
+    <div id="ledgerMonthPicker" class="mk-month-picker mk-month-picker--bar" data-role="month-picker"></div>
     <div id="ledgerHost" class="mk-ledger-print"></div>
   </section>
 
@@ -77,8 +77,8 @@
           <select id="receiptBuyer"></select>
         </div>
         <div class="mk-field">
-          <label for="receiptMonth">Month</label>
-          <input type="month" id="receiptMonth">
+          <label>Month</label>
+          <div id="receiptMonthPicker" class="mk-month-picker" data-role="month-picker"></div>
         </div>
         <div id="receiptFormError" class="mk-error"></div>
         <div class="mk-actions">
@@ -105,11 +105,8 @@
         <h2>Buyers</h2>
         <p>Name, rate, previous balance — milk entry is on the Entry tab</p>
       </div>
-      <div class="mk-toolbar">
-        <label class="mk-tip" for="buyersMonth">Balance for month</label>
-        <input type="month" id="buyersMonth" class="mk-input-inline">
-      </div>
     </div>
+    <div id="buyersMonthPicker" class="mk-month-picker mk-month-picker--bar" data-role="month-picker"></div>
     <p class="mk-entry-tip"><b>Prev. balance tip:</b> a negative (−) value means they paid this much less last month.</p>
     <div class="mk-form" style="margin-bottom:16px;">
       <div class="mk-field">

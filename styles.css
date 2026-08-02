@@ -77,7 +77,44 @@ body{
   font-size: 20px; margin:0; color:var(--red-deep);
 }
 .mk-panel-head p{ margin:4px 0 0; font-size:13px; color:var(--ink-soft); }
-.mk-toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.mk-month-picker{
+  display:flex; flex-wrap:wrap; align-items:center; gap:6px;
+}
+.mk-month-picker--bar{
+  max-width: 100%;
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  background: rgba(255,253,248,0.75);
+  border: 1px solid var(--paper-margin);
+  border-radius: 8px;
+}
+.mk-month-picker .mk-year-wrap{
+  display:flex; align-items:center; gap:4px;
+  margin-right: 6px;
+}
+.mk-month-picker .mk-year-label{
+  font-family:'Zilla Slab', Georgia, serif;
+  font-weight:700; font-size:14px; color:var(--red-deep);
+  min-width: 3.2em; text-align:center;
+}
+.mk-month-btn, .mk-year-nav{
+  font-family: inherit; font-size: 12.5px; font-weight: 600;
+  padding: 6px 9px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--paper-margin);
+  background: var(--white); color: var(--ink-soft);
+}
+.mk-month-btn:hover, .mk-year-nav:hover{
+  background: rgba(154,43,43,0.08); color: var(--red-deep);
+}
+.mk-month-btn--active{
+  background: var(--red); color: #fff; border-color: var(--red);
+}
+.mk-month-btn--active:hover{
+  background: var(--red-deep); color: #fff;
+}
+.mk-month-btns{
+  display:flex; flex-wrap:wrap; gap:4px;
+}
 
 .mk-form{
   background:
