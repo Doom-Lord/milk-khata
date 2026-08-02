@@ -324,12 +324,6 @@
     $('setContact').value = s.contactMobile || '';
     $('setPayment').value = s.paymentNumber || '';
     $('setDefaultRate').value = s.defaultRate ?? 80;
-    updateBrandSubtitle();
-  }
-
-  function updateBrandSubtitle() {
-    const el = $('brandSubtitle');
-    if (el) el.textContent = (DB.settings.farmName || 'Milk bill · Monthly ledger');
   }
 
   function bindSettings() {
@@ -347,7 +341,6 @@
         if (key === 'defaultRate') val = parseFloat(val) || 0;
         DB.settings[key] = val;
         saveData(DB);
-        updateBrandSubtitle();
         if (key === 'defaultRate') {
           updatePasteBuyersTip();
         }
@@ -1483,7 +1476,6 @@
     bindReceipt();
     bindBackup();
 
-    updateBrandSubtitle();
     renderEntry();
   }
 
