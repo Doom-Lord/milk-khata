@@ -1136,60 +1136,75 @@
     }
   }
 
-  async function downloadLedgerPdfDirect(ym, buyers) {
-    const jspdfNS = window.jspdf;
-    if (typeof html2canvas !== 'function' || !jspdfNS || !jspdfNS.jsPDF) {
-      showToast('PDF tools not loaded — try Print');
-      return;
-    }
+  function escapeMdCell(val) {
+    return String(val == null ? '' : val).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ').trim();
+  }
 
-    showToast('Creating PDF…');
+  function buildLedgerMarkdown(ym, buyers) {
+    const monthData = DB.months[ym];
+    const s = DB.settings;
+    const { year, month } = parseYearMonth(ym);
+    const numDays = daysInMonth(year, month);
+    const farm = s.farmName || 'Dairy Farm';
+    const phone = s.contactMobile || '';
 
-    const host = document.createElement('div');
-    host.style.cssText = 'position:fixed;left:-16000px;top:0;background:#fff;z-index:-1;';
-    const widthPx = Math.max(1200, 80 + buyers.length * 84);
-    host.innerHTML =
-      '<div class="mk-ledger-wrap mk-ledger-pdf-capture" id="ledgerPdfCapture" style="width:' + widthPx + 'px;">' +
-      buildLedgerInnerHtml(ym, buyers) +
-      '</div>';
-    document.body.appendChild(host);
+    const calcs = buyers.map((b) =>
+      calcBuyer(monthData.buyers[b.id] || { rate: 0, openingBalance: 0, adjustment: 0, days: {} })
+    );
 
-    try {
-      if (document.fonts && document.fonts.ready) {
-        try { await document.fonts.ready; } catch (e) { /* ignore */ }
-      }
-      await new Promise((r) => setTimeout(r, 150));
+    const lines = [];
+    lines.push('# ' + farm);
+    lines.push('');
+    lines.push('**Month:** ' + monthLabel(ym) + (phone ? '  ·  **Mob.:** ' + phone : ''));
+    lines.push('');
 
-      const sheet = host.querySelector('#ledgerPdfCapture');
-      const canvas = await html2canvas(sheet, {
-        backgroundColor: '#ffffff',
-        scale: 2.5,
-        useCORS: true,
-        logging: false,
-        windowWidth: widthPx + 40
+    const header = ['Date'].concat(buyers.map((b) => escapeMdCell(b.name)));
+    const sep = header.map(() => '---');
+    lines.push('| ' + header.join(' | ') + ' |');
+    lines.push('| ' + sep.join(' | ') + ' |');
+
+    for (let d = 1; d <= numDays; d++) {
+      const cells = [String(d)];
+      buyers.forEach((b) => {
+        const entry = monthData.buyers[b.id];
+        const val = entry && entry.days ? entry.days[String(d)] : undefined;
+        const display = (val === undefined || val === null || val === '') ? '' : fmtNum(val);
+        cells.push(escapeMdCell(display));
       });
-
-      const { jsPDF } = jspdfNS;
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const margin = 8;
-      const maxW = pageW - margin * 2;
-      const maxH = pageH - margin * 2;
-      const fit = Math.min(maxW / canvas.width, maxH / canvas.height);
-      const drawW = canvas.width * fit;
-      const drawH = canvas.height * fit;
-      const x = margin + (maxW - drawW) / 2;
-      const y = margin + (maxH - drawH) / 2;
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', x, y, drawW, drawH);
-      pdf.save('milk-khata-ledger-' + ym + '.pdf');
-      showToast('PDF downloaded ✅');
-    } catch (err) {
-      console.error(err);
-      showToast('PDF download failed — try Print');
-    } finally {
-      host.remove();
+      lines.push('| ' + cells.join(' | ') + ' |');
     }
+
+    ledgerFooterRows().forEach((row) => {
+      const cells = [row.label].concat(calcs.map((c) => escapeMdCell(row.get(c))));
+      lines.push('| ' + cells.join(' | ') + ' |');
+    });
+
+    let farmLitres = 0, farmAmount = 0, farmNet = 0;
+    calcs.forEach((c) => {
+      farmLitres += c.total;
+      farmAmount += c.amount;
+      farmNet += c.net;
+    });
+    lines.push('');
+    lines.push('**Total milk:** ' + fmtNum(farmLitres) + ' L');
+    lines.push('**Total Amount:** ' + fmtRupee(farmAmount));
+    lines.push('**Total NET:** ' + fmtRupee(farmNet));
+    lines.push('');
+    return lines.join('\n');
+  }
+
+  function downloadLedgerMarkdown(ym, buyers) {
+    const md = buildLedgerMarkdown(ym, buyers);
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'milk-khata-ledger-' + ym + '.md';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast('Markdown table downloaded ✅');
   }
 
   function bindLedger() {
@@ -1204,7 +1219,7 @@
       openNumbersStyleLedgerPrint(ym, buyers);
     });
 
-    $('downloadLedgerPdfBtn').addEventListener('click', () => {
+    $('downloadLedgerMdBtn').addEventListener('click', () => {
       const ym = getSelectedYM();
       ensureMonth(ym);
       const buyers = buyersForMonth(ym);
@@ -1212,8 +1227,7 @@
         showToast('Open a month with buyers first');
         return;
       }
-      renderLedger();
-      downloadLedgerPdfDirect(ym, buyers);
+      downloadLedgerMarkdown(ym, buyers);
     });
   }
 
