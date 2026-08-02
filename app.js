@@ -369,7 +369,6 @@
       const c = calcBuyer(entry);
       const rateVal = monthData.buyers[b.id] ? entry.rate : b.defaultRate;
       const openingVal = monthData.buyers[b.id] ? entry.openingBalance : 0;
-      const adjVal = monthData.buyers[b.id] ? entry.adjustment : 0;
       return `
       <div class="mk-buyer-item ${b.active ? '' : 'mk-buyer-item--inactive'}" data-id="${escapeHtml(b.id)}">
         <div class="mk-buyer-info">
@@ -381,10 +380,7 @@
             <input type="number" step="0.5" min="0" inputmode="decimal" data-fin="rate" value="${fmtNum(rateVal)}" ${b.active ? '' : 'disabled'}>
           </label>
           <label>Prev. balance
-            <input type="number" step="1" inputmode="decimal" data-fin="openingBalance" value="${fmtNum(openingVal)}" ${b.active && monthData.buyers[b.id] ? '' : 'disabled'}>
-          </label>
-          <label>Adjustment ±
-            <input type="number" step="1" inputmode="decimal" data-fin="adjustment" value="${fmtNum(adjVal)}" ${b.active && monthData.buyers[b.id] ? '' : 'disabled'}>
+            <input type="number" step="1" inputmode="decimal" data-fin="openingBalance" value="${fmtNum(openingVal)}" title="Positive = due (adds). Negative = advance (deducts)." ${b.active && monthData.buyers[b.id] ? '' : 'disabled'}>
           </label>
         </div>
         <div class="mk-buyer-actions">
@@ -500,7 +496,6 @@
         $('editBuyerName').value = buyers[idx].name;
         $('editBuyerRate').value = buyers[idx].active && entry.rate != null ? entry.rate : buyers[idx].defaultRate;
         $('editBuyerOpening').value = entry.openingBalance || 0;
-        $('editBuyerAdj').value = entry.adjustment || 0;
         $('buyerModal').classList.add('mk-modal-backdrop--show');
       }
     });
@@ -523,8 +518,6 @@
         DB.months[ym].buyers[id].rate = val;
       } else if (field === 'openingBalance') {
         DB.months[ym].buyers[id].openingBalance = val;
-      } else if (field === 'adjustment') {
-        DB.months[ym].buyers[id].adjustment = val;
       }
       saveData(DB);
       const entry = DB.months[ym].buyers[id];
@@ -548,7 +541,6 @@
       const name = normalizeBuyerName($('editBuyerName').value);
       const rate = parseFloat($('editBuyerRate').value);
       const opening = parseFloat($('editBuyerOpening').value) || 0;
-      const adj = parseFloat($('editBuyerAdj').value) || 0;
       if (!name || !rate || rate <= 0) {
         showToast('Enter a valid name and rate');
         return;
@@ -560,7 +552,6 @@
       if (DB.months[ym].buyers[id]) {
         DB.months[ym].buyers[id].rate = rate;
         DB.months[ym].buyers[id].openingBalance = opening;
-        DB.months[ym].buyers[id].adjustment = adj;
       }
       saveData(DB);
       $('buyerModal').classList.remove('mk-modal-backdrop--show');
