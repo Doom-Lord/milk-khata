@@ -772,7 +772,8 @@
       refreshEntryFooter();
     });
 
-    // Enter / Tab moves to next buyer same day; at end of row → next day first buyer
+    // Enter moves down the same buyer column (one buyer at a time).
+    // Tab moves to the next buyer on the same day.
     $('entryGridHost').addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' && e.key !== 'Tab') return;
       const input = e.target;
@@ -785,20 +786,42 @@
       const { year, month } = parseYearMonth(ym);
       const numDays = daysInMonth(year, month);
 
-      let nextCol = col + 1;
+      let nextCol = col;
       let nextDay = day;
-      if (e.shiftKey && e.key === 'Tab') {
-        nextCol = col - 1;
-        if (nextCol < 0) {
+
+      if (e.key === 'Enter') {
+        if (e.shiftKey) {
           nextDay = day - 1;
-          nextCol = buyers.length - 1;
-        }
-      } else {
-        if (nextCol >= buyers.length) {
-          nextCol = 0;
+          if (nextDay < 1) {
+            // previous buyer, last day
+            nextCol = col - 1;
+            nextDay = numDays;
+          }
+        } else {
           nextDay = day + 1;
+          if (nextDay > numDays) {
+            // finished this buyer → first day of next buyer
+            nextCol = col + 1;
+            nextDay = 1;
+          }
+        }
+      } else if (e.key === 'Tab') {
+        if (e.shiftKey) {
+          nextCol = col - 1;
+          if (nextCol < 0) {
+            nextDay = day - 1;
+            nextCol = buyers.length - 1;
+          }
+        } else {
+          nextCol = col + 1;
+          if (nextCol >= buyers.length) {
+            nextCol = 0;
+            nextDay = day + 1;
+          }
         }
       }
+
+      if (nextCol < 0 || nextCol >= buyers.length) return;
       if (nextDay < 1 || nextDay > numDays) return;
       const next = document.querySelector(
         `#entryGridHost input[data-day="${nextDay}"][data-col="${nextCol}"]`
