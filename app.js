@@ -285,7 +285,11 @@
     const list = $('buyerList');
     const buyers = allBuyersSorted();
     if (!buyers.length) {
-      list.innerHTML = '<div class="mk-empty">अभी कोई खरीदार नहीं — ऊपर से जोड़ें</div>';
+      list.innerHTML = `
+        <div class="mk-empty-cta">
+          <h3>अभी कोई खरीदार नहीं</h3>
+          <p>ऊपर नाम और दर भरकर <b>+ जोड़ें</b> दबाएँ। उसके बाद एंट्री टैब में दूध लिख सकेंगे।</p>
+        </div>`;
       return;
     }
     list.innerHTML = buyers.map((b, idx) => `
@@ -410,8 +414,20 @@
     const meta = $('entryMeta');
     if (!buyers.length) {
       meta.innerHTML = '';
-      $('entryGridHost').innerHTML = '<div class="mk-empty">पहले खरीदार जोड़ें (खरीदार टैब)</div>';
+      $('entryGridHost').innerHTML = `
+        <div class="mk-empty-cta">
+          <h3>दूध एंट्री शुरू करें</h3>
+          <p>पहले खरीदार जोड़ें, फिर यहाँ रोज़ की मात्रा लिख सकेंगे।<br>
+          सेल पर टैप करें → नंबर भरें → Enter से अगले खरीदार पर जाएँ।</p>
+          <div class="mk-actions">
+            <button type="button" class="mk-btn mk-btn--primary" id="goAddBuyersBtn">+ खरीदार जोड़ें</button>
+          </div>
+        </div>`;
       $('entryTotals').innerHTML = '';
+      const goBtn = $('goAddBuyersBtn');
+      if (goBtn) {
+        goBtn.addEventListener('click', () => showPanel('buyers'));
+      }
       return;
     }
 
@@ -441,7 +457,8 @@
     }).join('');
 
     // Grid
-    let html = '<div class="mk-grid-scroll"><table class="mk-entry-table"><thead><tr><th>तारीख</th>';
+    let html = '<p class="mk-entry-tip">💡 खाली सेल पर टैप करके लीटर लिखें। Enter/Tab = उसी दिन अगला खरीदार।</p>';
+    html += '<div class="mk-grid-scroll"><table class="mk-entry-table"><thead><tr><th>तारीख</th>';
     buyers.forEach((b) => {
       html += `<th class="mk-col-buyer">${escapeHtml(b.name)}</th>`;
     });
@@ -516,13 +533,22 @@
       const ym = currentYM();
       syncMonthInputs(ym);
       renderEntry();
+      if (!buyersForMonth(ym).length) {
+        showPanel('buyers');
+        showToast('पहले खरीदार जोड़ें');
+        return;
+      }
       const today = new Date().getDate();
       const row = $('entry-day-' + today);
       if (row) {
         row.scrollIntoView({ behavior: 'smooth', block: 'center' });
         const firstInput = row.querySelector('input');
-        if (firstInput) firstInput.focus();
+        if (firstInput) {
+          firstInput.focus();
+          firstInput.select();
+        }
       }
+      showToast('आज की पंक्ति तैयार — दूध लिखें');
     });
 
     $('entryMeta').addEventListener('input', (e) => {
