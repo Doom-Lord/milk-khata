@@ -7,214 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A5%9B%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --paper: #f7efdc;
-    --paper-line: rgba(154,43,43,0.16);
-    --paper-margin: rgba(154,43,43,0.35);
-    --red: #9a2b2b;
-    --red-deep: #6f1f1f;
-    --ink: #2a2118;
-    --ink-soft: #6b5f4e;
-    --gold: #c08a2e;
-    --gold-deep: #93691f;
-    --white: #fffdf8;
-    --shadow: rgba(60,40,20,0.20);
-    --ok: #3c7a4f;
-    --warn: #a86a1f;
-  }
-  *{ box-sizing:border-box; }
-  html,body{ margin:0; padding:0; }
-  body{
-    background: var(--paper);
-    color: var(--ink);
-    font-family: 'Inter', 'Noto Sans Devanagari', sans-serif;
-    min-height:100vh;
-    padding: 28px 16px 60px;
-  }
-  .mk-wrap{ max-width: 1080px; margin: 0 auto; }
-
-  /* ---------- Top bar ---------- */
-  .mk-top{
-    display:flex; align-items:center; justify-content:space-between; gap:16px;
-    flex-wrap:wrap;
-    margin-bottom: 22px;
-    padding-bottom: 16px;
-    border-bottom: 2px solid var(--red);
-  }
-  .mk-brand{ display:flex; align-items:center; gap:10px; }
-  .mk-brand-emoji{ font-size:30px; line-height:1; }
-  .mk-brand h1{
-    font-family:'Zilla Slab', Georgia, serif;
-    font-size: 22px; margin:0; color:var(--red-deep); letter-spacing:.2px;
-  }
-  .mk-brand p{ margin:2px 0 0; font-size:12.5px; color:var(--ink-soft); }
-  .mk-identity{ display:flex; gap:8px; flex-wrap:wrap; }
-  .mk-identity input{
-    font-family:inherit; font-size:13px; padding:7px 10px;
-    border:1px solid var(--paper-margin); border-radius:6px;
-    background: var(--white); color:var(--ink); width:180px;
-  }
-  .mk-identity input:focus{ outline:2px solid var(--gold); outline-offset:1px; }
-
-  /* ---------- Layout ---------- */
-  .mk-grid{
-    display:grid; grid-template-columns: 1fr; gap: 22px;
-  }
-  @media (min-width: 880px){
-    .mk-grid{ grid-template-columns: 420px 1fr; align-items:start; }
-  }
-
-  /* ---------- Form card (ruled ledger pad look) ---------- */
-  .mk-form{
-    background:
-      linear-gradient(90deg, transparent 0 38px, var(--paper-margin) 38px 40px, transparent 40px 100%),
-      repeating-linear-gradient(var(--white), var(--white) 30px, var(--paper-line) 31px);
-    border: 1px solid var(--paper-margin);
-    border-radius: 8px;
-    padding: 20px 20px 22px 46px;
-    box-shadow: 0 6px 18px var(--shadow);
-  }
-  .mk-field{ margin-bottom: 14px; }
-  .mk-field label{
-    display:block; font-size:13px; font-weight:600; color:var(--red-deep);
-    margin-bottom: 4px;
-  }
-  .mk-field small{ font-weight:400; color:var(--ink-soft); }
-  .mk-field input, .mk-field textarea{
-    width:100%; font-family: inherit; font-size:14px; color:var(--ink);
-    background: rgba(255,255,255,0.7); border: 1px solid var(--paper-margin);
-    border-radius: 6px; padding: 9px 10px;
-  }
-  .mk-field input:focus, .mk-field textarea:focus{
-    outline: 2px solid var(--gold); outline-offset: 1px; background:#fff;
-  }
-  .mk-field textarea{
-    min-height: 150px; font-family: 'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace;
-    font-size: 13.5px; resize: vertical; line-height:1.5;
-  }
-  .mk-tip{ font-size:12px; color:var(--ink-soft); margin-top:5px; }
-  .mk-hint{ font-size:12.5px; margin-top:6px; font-weight:600; min-height:16px; }
-  .mk-hint--ok{ color: var(--ok); }
-  .mk-hint--warn{ color: var(--warn); }
-  .mk-error{ color:var(--red); font-size:12.5px; font-weight:600; min-height:16px; margin:2px 0 8px; }
-
-  .mk-actions{ display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; }
-  .mk-btn{
-    font-family:inherit; font-size:14px; font-weight:700; cursor:pointer;
-    border-radius: 7px; padding: 11px 18px; border: none;
-  }
-  .mk-btn--primary{ background: var(--gold); color:#2a1c00; }
-  .mk-btn--primary:hover{ background: var(--gold-deep); }
-  .mk-btn--ghost{ background: transparent; color:var(--red-deep); border:1px solid var(--paper-margin); }
-  .mk-btn--ghost:hover{ background: rgba(154,43,43,0.08); }
-  .mk-btn:focus-visible{ outline:2px solid var(--red); outline-offset:2px; }
-
-  /* ---------- Receipt (stamped bill look) ---------- */
-  .mk-receipt-wrap{
-    background: var(--white);
-    border-radius: 10px;
-    padding: 26px;
-    box-shadow: 0 10px 28px var(--shadow);
-    position: relative;
-    min-height: 220px;
-  }
-  .mk-placeholder{
-    color: var(--ink-soft); font-size:14px; text-align:center;
-    padding: 60px 10px; font-style:italic;
-  }
-  .mk-receipt{
-    max-width: 480px; margin: 0 auto; text-align:center;
-    border: 2px dashed var(--paper-margin); border-radius: 6px;
-    padding: 22px 20px 26px; position:relative;
-  }
-  .mk-receipt-shri{
-    font-family:'Baloo 2', 'Noto Sans Devanagari', sans-serif; font-weight:700; color:var(--red); font-size:16px;
-    letter-spacing:.5px; margin-bottom:4px;
-  }
-  .mk-receipt-farm{
-    font-family:'Zilla Slab', 'Noto Sans Devanagari', serif; font-weight:700;
-    font-size: 24px; color:var(--red-deep);
-  }
-  .mk-receipt-mobile{ font-size:12.5px; color:var(--ink-soft); margin-top:2px; }
-  .mk-receipt-divider{ height:2px; background:var(--red); margin: 12px 0; opacity:.75; }
-  .mk-receipt-divider--light{ height:1px; background:var(--paper-margin); opacity:1; }
-
-  .mk-row{
-    display:flex; justify-content:space-between; align-items:baseline;
-    font-size: 14px; padding: 4px 2px; text-align:left;
-  }
-  .mk-row small{ color:var(--ink-soft); font-size:11.5px; }
-  .mk-row-label{ color:var(--ink); }
-  .mk-row-value{ font-weight:600; white-space:nowrap; padding-left:10px; }
-  .mk-row--head .mk-row-label{ color:var(--ink-soft); font-weight:600; }
-  .mk-row--head .mk-row-value{ font-weight:700; }
-  .mk-row--total-milk{ border-top:1px dashed var(--paper-margin); margin-top:4px; padding-top:8px; font-weight:700; }
-
-  .mk-calendar{
-    display:grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
-    margin: 8px 0 10px;
-  }
-  .mk-day{
-    background: var(--paper); border: 1px solid var(--paper-margin);
-    border-radius: 5px; padding: 4px 2px 5px; text-align:center;
-  }
-  .mk-day-num{ display:block; font-size: 9.5px; color: var(--ink-soft); line-height:1.4; }
-  .mk-day-qty{ display:block; font-size: 12px; font-weight:700; line-height:1.3; }
-  .mk-day-qty--zero{ color: var(--red); }
-  .mk-day-qty--milk{ color: var(--ok); }
-
-  .mk-weektotals{
-    display:flex; flex-wrap:wrap; gap: 3px 10px;
-    font-size: 11.5px; color: var(--ink-soft);
-    padding: 6px 2px 10px; border-bottom: 1px dashed var(--paper-margin);
-  }
-  .mk-weektotals b{ color: var(--red-deep); }
-
-  .mk-grandtotal{
-    display:flex; justify-content:space-between; align-items:center;
-    background: var(--paper); border:1px solid var(--gold);
-    border-radius:8px; padding: 12px 14px; margin-top:6px;
-    font-family: 'Inter', 'Noto Sans Devanagari', sans-serif; font-weight:700; font-size:22px; color:var(--red-deep);
-  }
-  .mk-receipt-footer{ margin-top:16px; font-size:12px; color:var(--ink-soft); }
-
-  .mk-upi{
-    margin-top:14px; padding-top:12px; border-top:1px dashed var(--paper-margin);
-    display:flex; flex-direction:column; align-items:center; gap:4px;
-  }
-  .mk-upi-logo {
-    height: 24px; /* Adjust size as needed */
-    object-fit: contain;
-    margin-bottom: 2px;
-  }
-  .mk-upi-text{ font-size:12px; color:var(--ink-soft); }
-  .mk-upi-number{
-    font-family:'Inter', 'Noto Sans Devanagari', sans-serif;
-    font-size:17px; font-weight:700; color:var(--red-deep); letter-spacing:.5px;
-  }
-
-  .mk-receipt-actions{
-    display:none; gap:10px; margin-top:18px; justify-content:center; flex-wrap:wrap;
-  }
-
-  /* ---------- Toast ---------- */
-  .mk-toast{
-    position: fixed; left:50%; bottom:26px; transform: translate(-50%, 20px);
-    background: var(--ink); color:#fff; padding:10px 18px; border-radius:8px;
-    font-size:13.5px; opacity:0; transition: all .25s ease; pointer-events:none;
-  }
-  .mk-toast--show{ opacity:1; transform: translate(-50%, 0); }
-
-  .mk-help{ margin-top:26px; font-size:12.5px; color:var(--ink-soft); text-align:center; }
-
-  /* ---------- Print (Save as PDF) ---------- */
-  @media print{
-    body *{ visibility:hidden; }
-    .mk-receipt, .mk-receipt *{ visibility:visible; }
-    .mk-receipt{ position:absolute; top:0; left:0; right:0; margin:0 auto; border:none; }
-  }
-</style>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="mk-wrap">
@@ -224,275 +17,188 @@
       <span class="mk-brand-emoji">🥛</span>
       <div>
         <h1>Milk Khata</h1>
+        <p id="brandSubtitle">दूध बिल · मासिक खाता</p>
       </div>
-    </div>
-    <div class="mk-identity">
-      <input id="farmName" type="text" placeholder="फार्म का नाम (जैसे: देसवाल डेयरी फार्म)">
-      <input id="farmMobile" type="text" placeholder="मोबाइल नंबर">
     </div>
   </div>
 
-  <div class="mk-grid">
+  <nav class="mk-nav" id="mainNav" aria-label="मुख्य मेनू">
+    <button type="button" class="mk-nav-btn mk-nav-btn--active" data-panel="entry">📝 एंट्री</button>
+    <button type="button" class="mk-nav-btn" data-panel="ledger">📒 लेजर</button>
+    <button type="button" class="mk-nav-btn" data-panel="receipt">🧾 रसीद</button>
+    <button type="button" class="mk-nav-btn" data-panel="buyers">👥 खरीदार</button>
+    <button type="button" class="mk-nav-btn" data-panel="settings">⚙️ सेटिंग्स</button>
+  </nav>
 
-    <!-- FORM -->
-    <div class="mk-form">
-      <div class="mk-field">
-        <label for="custName">ग्राहक का नाम</label>
-        <input id="custName" type="text" placeholder="जैसे: सुखबीर">
+  <!-- ========== ENTRY ========== -->
+  <section class="mk-panel mk-panel--active" id="panel-entry">
+    <div class="mk-panel-head">
+      <div>
+        <h2>मासिक एंट्री</h2>
+        <p>हर दिन प्रत्येक खरीदार का दूध लिखें</p>
       </div>
-
-      <div class="mk-field">
-        <label for="monthYear">महीना <small>(वैकल्पिक)</small></label>
-        <input id="monthYear" type="text" placeholder="जैसे: मई 2026">
+      <div class="mk-toolbar">
+        <label class="mk-tip" for="entryMonth">महीना</label>
+        <input type="month" id="entryMonth" class="mk-input-inline">
+        <button type="button" class="mk-btn mk-btn--ghost mk-btn--sm" id="jumpTodayBtn">आज पर जाएँ</button>
       </div>
+    </div>
+    <div id="entryMeta" class="mk-meta-strip"></div>
+    <div id="entryGridHost"></div>
+    <div id="entryTotals" class="mk-totals-bar"></div>
+  </section>
 
-      <div class="mk-field">
-        <label for="rate">दर (₹ प्रति लीटर)</label>
-        <input id="rate" type="number" step="0.5" min="0" placeholder="जैसे: 80" value="80">
+  <!-- ========== LEDGER ========== -->
+  <section class="mk-panel" id="panel-ledger">
+    <div class="mk-panel-head">
+      <div>
+        <h2>मासिक लेजर</h2>
+        <p>पूरा रजिस्टर — प्रिंट / PDF (लैंडस्केप)</p>
       </div>
-
-      <div class="mk-field">
-        <label for="balance">पिछला बकाया (₹) <small>— एडवांस हो तो − लगाएं</small></label>
-        <input id="balance" type="number" step="1" value="0">
+      <div class="mk-toolbar">
+        <input type="month" id="ledgerMonth" class="mk-input-inline">
+        <button type="button" class="mk-btn mk-btn--primary" id="printLedgerBtn">🖨️ प्रिंट / PDF</button>
       </div>
+    </div>
+    <div id="ledgerHost" class="mk-ledger-print"></div>
+  </section>
 
-      <div class="mk-field">
-        <label for="qtyInput">दूध की मात्रा (एक ग्राहक का पूरा कॉलम पेस्ट करें)</label>
-        <textarea id="qtyInput" placeholder="Numbers से कॉलम कॉपी करके यहाँ पेस्ट करें, जैसे:&#10;5&#10;5&#10;4&#10;5&#10;..."></textarea>
-        <p class="mk-tip">💡 Numbers में ग्राहक का दैनिक दूध वाला कॉलम सेलेक्ट करें (⌘C), फिर यहाँ पेस्ट करें (⌘V)।</p>
-        <div id="countHint" class="mk-hint"></div>
+  <!-- ========== RECEIPT ========== -->
+  <section class="mk-panel" id="panel-receipt">
+    <div class="mk-panel-head">
+      <div>
+        <h2>ग्राहक रसीद</h2>
+        <p>खरीदार और महीना चुनकर रसीद बनाएं</p>
       </div>
+    </div>
+    <div class="mk-grid">
+      <div class="mk-form">
+        <div class="mk-field">
+          <label for="receiptBuyer">खरीदार</label>
+          <select id="receiptBuyer"></select>
+        </div>
+        <div class="mk-field">
+          <label for="receiptMonth">महीना</label>
+          <input type="month" id="receiptMonth">
+        </div>
+        <div id="receiptFormError" class="mk-error"></div>
+        <div class="mk-actions">
+          <button type="button" id="generateBtn" class="mk-btn mk-btn--primary">रसीद बनाएं</button>
+        </div>
+      </div>
+      <div class="mk-receipt-wrap">
+        <div id="receiptOutput">
+          <div class="mk-placeholder">यहाँ आपकी रसीद बनकर दिखेगी 🧾</div>
+        </div>
+        <div id="receiptActions" class="mk-receipt-actions">
+          <button type="button" id="copyBtn" class="mk-btn mk-btn--primary">📋 WhatsApp टेक्स्ट कॉपी</button>
+          <button type="button" id="shareImgBtn" class="mk-btn mk-btn--ghost">📷 स्क्रीनशॉट शेयर</button>
+          <button type="button" id="printReceiptBtn" class="mk-btn mk-btn--ghost">🖨️ प्रिंट</button>
+        </div>
+      </div>
+    </div>
+  </section>
 
-      <div id="formError" class="mk-error"></div>
-
+  <!-- ========== BUYERS ========== -->
+  <section class="mk-panel" id="panel-buyers">
+    <div class="mk-panel-head">
+      <div>
+        <h2>खरीदार सूची</h2>
+        <p>नाम, दर, क्रम — इतिहास सुरक्षित रहता है</p>
+      </div>
+    </div>
+    <div class="mk-form" style="margin-bottom:16px;">
+      <div class="mk-field-row">
+        <div class="mk-field">
+          <label for="newBuyerName">नया खरीदार</label>
+          <input id="newBuyerName" type="text" placeholder="जैसे: सुखबीर">
+        </div>
+        <div class="mk-field">
+          <label for="newBuyerRate">डिफ़ॉल्ट दर (₹/ली.)</label>
+          <input id="newBuyerRate" type="number" step="0.5" min="0" value="80">
+        </div>
+      </div>
       <div class="mk-actions">
-        <button id="generateBtn" class="mk-btn mk-btn--primary">रसीद बनाएं</button>
-        <button id="resetBtn" class="mk-btn mk-btn--ghost">रीसेट करें</button>
+        <button type="button" id="addBuyerBtn" class="mk-btn mk-btn--primary">+ जोड़ें</button>
+      </div>
+      <div id="buyerError" class="mk-error"></div>
+    </div>
+    <div id="buyerList" class="mk-buyer-list"></div>
+  </section>
+
+  <!-- ========== SETTINGS ========== -->
+  <section class="mk-panel" id="panel-settings">
+    <div class="mk-panel-head">
+      <div>
+        <h2>सेटिंग्स</h2>
+        <p>फार्म पहचान और बैकअप</p>
       </div>
     </div>
-
-    <!-- RECEIPT -->
-    <div class="mk-receipt-wrap">
-      <div id="receiptOutput">
-        <div class="mk-placeholder">यहाँ आपकी रसीद बनकर दिखेगी 🧾</div>
+    <div class="mk-form" style="margin-bottom:18px;">
+      <div class="mk-field">
+        <label for="setFarmName">फार्म का नाम</label>
+        <input id="setFarmName" type="text" placeholder="Deswal Dairy Farm">
       </div>
-      <div id="receiptActions" class="mk-receipt-actions">
-        <button id="copyBtn" class="mk-btn mk-btn--primary">📋 WhatsApp के लिए कॉपी करें</button>
+      <div class="mk-field">
+        <label for="setTagline">टैगलाइन</label>
+        <input id="setTagline" type="text" placeholder="जय दादा बिशादे की">
       </div>
+      <div class="mk-field-row">
+        <div class="mk-field">
+          <label for="setContact">संपर्क मोबाइल</label>
+          <input id="setContact" type="text" placeholder="98120XXXXX">
+        </div>
+        <div class="mk-field">
+          <label for="setPayment">UPI / भुगतान नंबर <small>— खाली हो तो संपर्क नंबर</small></label>
+          <input id="setPayment" type="text" placeholder="98120XXXXX या UPI ID">
+        </div>
+      </div>
+      <div class="mk-field">
+        <label for="setDefaultRate">डिफ़ॉल्ट दूध दर (₹/ली.)</label>
+        <input id="setDefaultRate" type="number" step="0.5" min="0" value="80">
+      </div>
+      <p class="mk-tip">बदलाव तुरंत सेव होते हैं (localStorage)।</p>
     </div>
 
+    <div class="mk-card">
+      <h3 style="margin:0 0 10px;font-family:'Zilla Slab',Georgia,serif;color:var(--red-deep);font-size:16px;">बैकअप · Export / Import</h3>
+      <div class="mk-warn-box">
+        ⚠️ सारा डेटा सिर्फ इस ब्राउज़र में रहता है। फ़ोन और लैपटॉप अलग-अलग डेटा रखेंगे।
+        ब्राउज़र कैश साफ़ करने से सब मिट सकता है — नियमित JSON बैकअप ज़रूर लें।
+      </div>
+      <div class="mk-actions">
+        <button type="button" id="exportBtn" class="mk-btn mk-btn--primary">⬇️ JSON Export</button>
+        <button type="button" id="importBtn" class="mk-btn mk-btn--ghost">⬆️ JSON Import</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- Edit buyer modal -->
+<div class="mk-modal-backdrop" id="buyerModal" role="dialog" aria-modal="true">
+  <div class="mk-modal">
+    <h3>खरीदार संपादित करें</h3>
+    <input type="hidden" id="editBuyerId">
+    <div class="mk-field">
+      <label for="editBuyerName">नाम</label>
+      <input id="editBuyerName" type="text">
+    </div>
+    <div class="mk-field">
+      <label for="editBuyerRate">डिफ़ॉल्ट दर (₹/ली.)</label>
+      <input id="editBuyerRate" type="number" step="0.5" min="0">
+    </div>
+    <div class="mk-actions">
+      <button type="button" id="saveBuyerBtn" class="mk-btn mk-btn--primary">सेव करें</button>
+      <button type="button" id="cancelBuyerBtn" class="mk-btn mk-btn--ghost">रद्द</button>
+    </div>
   </div>
-
 </div>
 
 <div id="toast" class="mk-toast"></div>
 
-<script>
-(function(){
-  const $ = (id) => document.getElementById(id);
-
-  // Persist farm identity locally (this browser only)
-  const farmNameEl = $('farmName');
-  const farmMobileEl = $('farmMobile');
-  farmNameEl.value = localStorage.getItem('mk_farmName') || 'Deswal Dairy Farm';
-  farmMobileEl.value = localStorage.getItem('mk_farmMobile') || '9812xxx174';
-  farmNameEl.addEventListener('input', () => localStorage.setItem('mk_farmName', farmNameEl.value));
-  farmMobileEl.addEventListener('input', () => localStorage.setItem('mk_farmMobile', farmMobileEl.value));
-
-  const qtyInput = $('qtyInput');
-  const countHint = $('countHint');
-
-  const hindiMonths = ['जनवरी','फरवरी','मार्च','अप्रैल','मई','जून','जुलाई','अगस्त','सितंबर','अक्टूबर','नवंबर','दिसंबर'];
-  function currentMonthYear(){
-    const now = new Date();
-    return hindiMonths[now.getMonth()] + ' ' + now.getFullYear();
-  }
-  const monthYearEl = $('monthYear');
-  if(!monthYearEl.value) monthYearEl.value = currentMonthYear();
-
-  function parseQuantities(raw){
-    return raw
-      .split(/[\n,\t]+/)
-      .map(s => s.trim())
-      .filter(s => s.length > 0)
-      .map(s => parseFloat(s))
-      .filter(n => !isNaN(n) && n >= 0);
-  }
-
-  function fmtNum(n){
-    return (Math.round(n * 100) / 100).toString();
-  }
-  function fmtRupee(n){
-    const r = Math.round(n * 100) / 100;
-    return '₹' + r.toLocaleString('en-IN', { maximumFractionDigits: 2 });
-  }
-
-  function updateCount(){
-    const nums = parseQuantities(qtyInput.value);
-    if(nums.length === 0){
-      countHint.textContent = '';
-      countHint.className = 'mk-hint';
-      return;
-    }
-    const sum = nums.reduce((a,b) => a+b, 0);
-    countHint.textContent = nums.length + ' दिन का डेटा मिला (कुल ' + fmtNum(sum) + ' लीटर)';
-    countHint.className = 'mk-hint ' + ((nums.length >= 27 && nums.length <= 31) ? 'mk-hint--ok' : 'mk-hint--warn');
-  }
-  qtyInput.addEventListener('input', updateCount);
-
-  let lastReceipt = null;
-
-  function escapeHtml(s){
-    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-
-  function generate(){
-    const custName = $('custName').value.trim();
-    const monthYear = $('monthYear').value.trim();
-    const rate = parseFloat($('rate').value);
-    const balance = parseFloat($('balance').value) || 0;
-    const nums = parseQuantities(qtyInput.value);
-    const errorEl = $('formError');
-
-    if(!custName){ errorEl.textContent = 'कृपया ग्राहक का नाम लिखें।'; return; }
-    if(!rate || rate <= 0){ errorEl.textContent = 'कृपया सही दर (₹ प्रति लीटर) लिखें।'; return; }
-    if(nums.length === 0){ errorEl.textContent = 'कृपया दूध की मात्रा वाला कॉलम पेस्ट करें।'; return; }
-    errorEl.textContent = '';
-
-    // Always lay data out across a fixed 1–31 day sequence.
-    // Short months (28/29/30 days) simply end with 0s for the missing dates.
-    const paddedNums = Array.from({ length: 31 }, (_, i) => nums[i] !== undefined ? nums[i] : 0);
-
-    const weeks = [];
-    for(let i = 0; i < paddedNums.length; i += 7){
-      const chunk = paddedNums.slice(i, i + 7);
-      const startDay = i + 1;
-      const endDay = i + chunk.length;
-      weeks.push({
-        label: 'सप्ताह ' + (weeks.length + 1),
-        range: startDay + '–' + endDay,
-        total: chunk.reduce((a,b) => a+b, 0),
-        days: chunk.map((qty, j) => ({ date: startDay + j, qty }))
-      });
-    }
-    const totalMilk = nums.reduce((a,b) => a+b, 0);
-    const amount = totalMilk * rate;
-    const grandTotal = amount + balance;
-
-    lastReceipt = {
-      farmName: farmNameEl.value.trim() || 'डेयरी फार्म',
-      farmMobile: farmMobileEl.value.trim(),
-      custName, monthYear, rate, balance, weeks, totalMilk, amount, grandTotal
-    };
-
-    renderReceipt(lastReceipt);
-  }
-
-  function renderReceipt(r){
-    const out = $('receiptOutput');
-    const allDays = r.weeks.flatMap(w => w.days);
-    const calendarCells = allDays.map(d => `
-      <div class="mk-day">
-        <span class="mk-day-num">${d.date}</span>
-        <span class="mk-day-qty ${d.qty === 0 ? 'mk-day-qty--zero' : 'mk-day-qty--milk'}">${fmtNum(d.qty)}</span>
-      </div>`).join('');
-    const weekTotals = r.weeks.map(w => `<span><b>${w.label}</b>: ${fmtNum(w.total)} ली.</span>`).join('');
-
-    out.innerHTML = `
-      <div class="mk-receipt">
-        <div class="mk-receipt-shri">जय दादा बिशादे की</div>
-        <div class="mk-receipt-farm">${escapeHtml(r.farmName)}</div>
-        ${r.farmMobile ? `<div class="mk-receipt-mobile">📞 ${escapeHtml(r.farmMobile)}</div>` : ''}
-        <div class="mk-receipt-divider"></div>
-        <div class="mk-row mk-row--head">
-          <span class="mk-row-label">ग्राहक</span>
-          <span class="mk-row-value">${escapeHtml(r.custName)}</span>
-        </div>
-        ${r.monthYear ? `<div class="mk-row mk-row--head"><span class="mk-row-label">महीना</span><span class="mk-row-value">${escapeHtml(r.monthYear)}</span></div>` : ''}
-        <div class="mk-calendar">${calendarCells}</div>
-        <div class="mk-weektotals">${weekTotals}</div>
-        <div class="mk-row mk-row--total-milk">
-          <span class="mk-row-label">कुल दूध</span>
-          <span class="mk-row-value">${fmtNum(r.totalMilk)} ली.</span>
-        </div>
-        <div class="mk-row">
-          <span class="mk-row-label">दर</span>
-          <span class="mk-row-value">${fmtRupee(r.rate)} / ली.</span>
-        </div>
-        <div class="mk-row">
-          <span class="mk-row-label">राशि</span>
-          <span class="mk-row-value">${fmtRupee(r.amount)}</span>
-        </div>
-        ${r.balance !== 0 ? `<div class="mk-row"><span class="mk-row-label">${r.balance > 0 ? 'पिछला बकाया' : 'पिछला एडवांस'}</span><span class="mk-row-value">${fmtRupee(Math.abs(r.balance))}</span></div>` : ''}
-        <div class="mk-receipt-divider"></div>
-        <div class="mk-grandtotal">
-          <span>कुल देय राशि</span>
-          <span>${fmtRupee(r.grandTotal)}</span>
-        </div>
-        ${r.farmMobile ? `
-        <div class="mk-upi">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI Logo" class="mk-upi-logo">
-          <span class="mk-upi-text">इस नंबर पर UPI पेमेंट कर सकते हैं</span>
-          <span class="mk-upi-number">${escapeHtml(r.farmMobile)}</span>
-        </div>` : ''}
-        <div class="mk-receipt-footer">धन्यवाद 🙏</div>
-      </div>
-    `;
-    $('receiptActions').style.display = 'flex';
-    out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
-  $('generateBtn').addEventListener('click', generate);
-
-  $('resetBtn').addEventListener('click', () => {
-    $('custName').value = '';
-    $('monthYear').value = currentMonthYear();
-    $('rate').value = '80';
-    $('balance').value = '0';
-    qtyInput.value = '';
-    updateCount();
-    $('formError').textContent = '';
-    $('receiptOutput').innerHTML = '<div class="mk-placeholder">यहाँ आपकी रसीद बनकर दिखेगी 🧾</div>';
-    $('receiptActions').style.display = 'none';
-    lastReceipt = null;
-  });
-
-  $('copyBtn').addEventListener('click', () => {
-    if(!lastReceipt) return;
-    const r = lastReceipt;
-    let msg = `🥛 *${r.farmName}*\n`;
-    if(r.farmMobile) msg += `📞 ${r.farmMobile}\n`;
-    msg += `👤 ग्राहक: ${r.custName}\n`;
-    msg += r.monthYear ? `📅 महीना: ${r.monthYear}\n\n` : `\n`;
-    r.weeks.forEach(w => {
-      msg += `${w.label} (${w.range} तारीख): ${fmtNum(w.total)} ली.\n`;
-    });
-    msg += `\nकुल दूध: ${fmtNum(r.totalMilk)} ली.\n`;
-    msg += `दर: ${fmtRupee(r.rate)}/ली.\n`;
-    msg += `राशि: ${fmtRupee(r.amount)}\n`;
-    if(r.balance !== 0){
-      msg += `${r.balance > 0 ? 'पिछला बकाया' : 'पिछला एडवांस'}: ${fmtRupee(Math.abs(r.balance))}\n`;
-    }
-    msg += `━━━━━━━━━━\n`;
-    msg += `✅ *कुल देय राशि: ${fmtRupee(r.grandTotal)}*\n\n`;
-    msg += `धन्यवाद 🙏`;
-
-    navigator.clipboard.writeText(msg).then(() => {
-      showToast('WhatsApp के लिए कॉपी हो गया ✅');
-    }).catch(() => {
-      showToast('कॉपी नहीं हो पाया — दोबारा कोशिश करें');
-    });
-  });
-  
-  function showToast(text){
-    const t = $('toast');
-    t.textContent = text;
-    t.classList.add('mk-toast--show');
-    setTimeout(() => t.classList.remove('mk-toast--show'), 2200);
-  }
-
-  updateCount();
-})();
-</script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
