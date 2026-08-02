@@ -211,7 +211,6 @@
 
   // ───────────────────────── navigation ─────────────────────────
   let currentPanel = 'entry';
-  let printMode = null; // 'receipt' | 'ledger'
 
   function showPanel(name) {
     currentPanel = name;
@@ -1354,7 +1353,7 @@
         ${payNum ? `
         <div class="mk-upi">
           <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI Logo" class="mk-upi-logo">
-          <span class="mk-upi-text">Pay via UPI to this number</span>
+          <span class="mk-upi-text">Pay via UPI</span>
           <span class="mk-upi-number">${escapeHtml(payNum)}</span>
         </div>` : ''}
         <div class="mk-receipt-footer">Thank you 🙏</div>
@@ -1403,68 +1402,6 @@
       }).catch(() => {
         showToast('Copy failed — try again');
       });
-    });
-
-    $('printReceiptBtn').addEventListener('click', () => {
-      printMode = 'receipt';
-      document.querySelectorAll('.mk-print-only').forEach((el) => el.classList.remove('mk-print-only'));
-      const card = $('receiptCard');
-      if (!card) return;
-      card.classList.add('mk-print-only');
-      let styleEl = $('printPageStyle');
-      if (!styleEl) {
-        styleEl = document.createElement('style');
-        styleEl.id = 'printPageStyle';
-        document.head.appendChild(styleEl);
-      }
-      styleEl.textContent = '@page { size: auto; margin: 12mm; }';
-      window.print();
-    });
-
-    $('shareImgBtn').addEventListener('click', async () => {
-      const card = $('receiptCard');
-      if (!card || typeof html2canvas !== 'function') {
-        showToast('Screenshot not available');
-        return;
-      }
-      showToast('Creating image…');
-      try {
-        const canvas = await html2canvas(card, {
-          backgroundColor: '#fffdf8',
-          scale: 2,
-          useCORS: true,
-          logging: false
-        });
-        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-        if (!blob) { showToast('Could not create image'); return; }
-
-        const file = new File([blob], `white-accounts-${(lastReceipt && lastReceipt.custName) || 'receipt'}.png`, {
-          type: 'image/png'
-        });
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: 'White Accounts receipt',
-            text: lastReceipt ? `${lastReceipt.custName} — ${lastReceipt.monthYear}` : 'Receipt'
-          });
-          showToast('Share sheet opened ✅');
-        } else {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = file.name;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
-          showToast('PNG downloaded ✅');
-        }
-      } catch (err) {
-        if (err && err.name === 'AbortError') return;
-        console.error(err);
-        showToast('Share failed');
-      }
     });
   }
 
@@ -1535,12 +1472,6 @@
       setTimeout(() => { window.location.reload(); }, 400);
     });
   }
-
-  // Clean print class after print
-  window.addEventListener('afterprint', () => {
-    document.querySelectorAll('.mk-print-only').forEach((el) => el.classList.remove('mk-print-only'));
-    printMode = null;
-  });
 
   // ───────────────────────── init ─────────────────────────
   function init() {
