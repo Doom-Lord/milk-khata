@@ -380,6 +380,88 @@ body{
 .mk-ledger-table{ font-size: 12px; }
 .mk-ledger-table .mk-col-buyer{ min-width: 70px; }
 
+/* B&W ledger used only for PDF capture */
+.mk-ledger-pdf-root{
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  background: #fff;
+  color: #000;
+  z-index: -1;
+}
+.mk-ledger-pdf-bw{
+  background: #fff !important;
+  color: #000 !important;
+  box-shadow: none !important;
+  border: 1px solid #000 !important;
+  border-radius: 0 !important;
+  padding: 10px 12px !important;
+  overflow: hidden !important;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+.mk-ledger-pdf-bw .mk-ledger-header{
+  border-bottom: 1.5px solid #000;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  flex-shrink: 0;
+}
+.mk-ledger-pdf-bw .mk-ledger-header-farm,
+.mk-ledger-pdf-bw .mk-ledger-header-month,
+.mk-ledger-pdf-bw .mk-ledger-header-phone{
+  color: #000 !important;
+}
+.mk-ledger-pdf-bw .mk-ledger-header-farm{ font-size: 15px; }
+.mk-ledger-pdf-bw .mk-ledger-header-month{ font-size: 14px; }
+.mk-ledger-pdf-bw .mk-ledger-header-phone{ font-size: 12px; }
+.mk-ledger-pdf-bw .mk-ledger-table{
+  width: 100% !important;
+  height: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 11px;
+  color: #000;
+  flex: 1;
+}
+.mk-ledger-pdf-bw .mk-ledger-table th,
+.mk-ledger-pdf-bw .mk-ledger-table td{
+  border: 1px solid #000 !important;
+  background: #fff !important;
+  color: #000 !important;
+  padding: 2px 3px !important;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+.mk-ledger-pdf-bw .mk-ledger-table th{
+  font-weight: 700;
+}
+.mk-ledger-pdf-bw .mk-ledger-table .mk-col-buyer{
+  min-width: 0 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mk-ledger-pdf-bw .mk-footer-row td{
+  font-weight: 700;
+  background: #fff !important;
+}
+.mk-ledger-pdf-bw .mk-totals-bar{
+  color: #000 !important;
+  margin-top: 6px !important;
+  flex-shrink: 0;
+}
+.mk-ledger-pdf-bw .mk-totals-bar b{ color: #000 !important; }
+.mk-ledger-pdf-bw .mk-ledger-page-label{
+  font-size: 10px;
+  color: #000;
+  text-align: right;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
 /* ---------- Receipt layout ---------- */
 .mk-grid{
   display:grid; grid-template-columns: 1fr; gap: 22px;
@@ -531,6 +613,22 @@ body{
   .mk-ledger-print .mk-ledger-header{
     display: grid;
     grid-template-columns: 1fr auto 1fr;
+    border-bottom-color: #000;
+  }
+  .mk-ledger-print .mk-ledger-header-farm,
+  .mk-ledger-print .mk-ledger-header-month,
+  .mk-ledger-print .mk-ledger-header-phone,
+  .mk-ledger-print .mk-ledger-table,
+  .mk-ledger-print .mk-ledger-table th,
+  .mk-ledger-print .mk-ledger-table td,
+  .mk-ledger-print .mk-totals-bar,
+  .mk-ledger-print .mk-totals-bar b{
+    color: #000 !important;
+    background: #fff !important;
+  }
+  .mk-ledger-print .mk-ledger-table th,
+  .mk-ledger-print .mk-ledger-table td{
+    border-color: #000 !important;
   }
   .mk-ledger-print .mk-ledger-header-farm{ font-size: 13px; }
   .mk-ledger-print .mk-ledger-header-month{ font-size: 12px; }

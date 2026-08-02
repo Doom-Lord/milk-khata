@@ -811,48 +811,8 @@
   }
 
   // ───────────────────────── Ledger ─────────────────────────
-  function renderLedger() {
-    const ym = getSelectedYM();
-    const { year, month } = parseYearMonth(ym);
-    const numDays = daysInMonth(year, month);
-    ensureMonth(ym);
-    saveData(DB);
-
-    const buyers = buyersForMonth(ym);
-    const monthData = DB.months[ym];
-    const host = $('ledgerHost');
-
-    if (!buyers.length) {
-      host.innerHTML = '<div class="mk-empty">No active buyers</div>';
-      return;
-    }
-
-    const s = DB.settings;
-    let html = `<div class="mk-ledger-wrap" id="ledgerSheet">
-      <div class="mk-ledger-header">
-        <div class="mk-ledger-header-farm">${escapeHtml(s.farmName || 'Dairy Farm')}</div>
-        <div class="mk-ledger-header-month">${escapeHtml(monthLabel(ym))}</div>
-        <div class="mk-ledger-header-phone">${s.contactMobile ? '📞 ' + escapeHtml(s.contactMobile) : ''}</div>
-      </div>
-      <table class="mk-ledger-table"><thead><tr><th>Date</th>`;
-
-    buyers.forEach((b) => {
-      html += `<th class="mk-col-buyer">${escapeHtml(b.name)}</th>`;
-    });
-    html += '</tr></thead><tbody>';
-
-    for (let d = 1; d <= numDays; d++) {
-      html += `<tr><td>${d}</td>`;
-      buyers.forEach((b) => {
-        const val = monthData.buyers[b.id].days[String(d)];
-        const display = (val === undefined || val === null || val === '') ? '' : fmtNum(val);
-        html += `<td>${display}</td>`;
-      });
-      html += '</tr>';
-    }
-
-    // Footer rows: Total, Rate, Amount, Balance (opening+adj), NET
-    const rows = [
+  function ledgerFooterRows() {
+    return [
       { label: 'Total', get: (c) => fmtNum(c.total) },
       { label: 'Rate', get: (c) => fmtNum(c.rate) },
       { label: 'Amount', get: (c) => fmtNum(c.amount) },
@@ -862,30 +822,130 @@
       }},
       { label: 'NET', get: (c) => fmtNum(c.net) }
     ];
+  }
+
+  function buildLedgerInnerHtml(ym, buyers, opts) {
+    opts = opts || {};
+    const { year, month } = parseYearMonth(ym);
+    const numDays = daysInMonth(year, month);
+    const monthData = DB.months[ym];
+    const s = DB.settings;
+    const pageLabel = opts.pageLabel || '';
+
+    let html = `
+      <div class="mk-ledger-header">
+        <div class="mk-ledger-header-farm">${escapeHtml(s.farmName || 'Dairy Farm')}</div>
+        <div class="mk-ledger-header-month">${escapeHtml(monthLabel(ym))}</div>
+        <div class="mk-ledger-header-phone">${s.contactMobile ? escapeHtml(s.contactMobile) : ''}</div>
+      </div>
+      <table class="mk-ledger-table"><thead><tr><th>Date</th>`;
+
+    buyers.forEach((b) => {
+      html += `<th class="mk-col-buyer" title="${escapeHtml(b.name)}">${escapeHtml(b.name)}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    for (let d = 1; d <= numDays; d++) {
+      html += `<tr><td>${d}</td>`;
+      buyers.forEach((b) => {
+        const entry = monthData.buyers[b.id];
+        const val = entry && entry.days ? entry.days[String(d)] : undefined;
+        const display = (val === undefined || val === null || val === '') ? '' : fmtNum(val);
+        html += `<td>${display}</td>`;
+      });
+      html += '</tr>';
+    }
 
     let farmLitres = 0, farmAmount = 0, farmNet = 0;
     const calcs = buyers.map((b) => {
-      const c = calcBuyer(monthData.buyers[b.id]);
+      const c = calcBuyer(monthData.buyers[b.id] || { rate: 0, openingBalance: 0, adjustment: 0, days: {} });
       farmLitres += c.total;
       farmAmount += c.amount;
       farmNet += c.net;
       return c;
     });
 
-    rows.forEach((row) => {
+    ledgerFooterRows().forEach((row) => {
       html += `<tr class="mk-footer-row"><td>${row.label}</td>`;
       calcs.forEach((c) => { html += `<td>${row.get(c)}</td>`; });
       html += '</tr>';
     });
 
     html += '</tbody></table>';
-    html += `<div class="mk-totals-bar" style="margin-top:10px;">
+    html += `<div class="mk-totals-bar">
       <span>Total milk: <b>${fmtNum(farmLitres)} L</b></span>
       <span>Total Amount: <b>${fmtRupee(farmAmount)}</b></span>
       <span>Total NET: <b>${fmtRupee(farmNet)}</b></span>
-    </div></div>`;
+    </div>`;
+    if (pageLabel) {
+      html += `<div class="mk-ledger-page-label">${escapeHtml(pageLabel)}</div>`;
+    }
+    return html;
+  }
 
-    host.innerHTML = html;
+  /** Split buyers across PDF pages only when names would be too cramped to read. */
+  function chunkBuyersForPdf(buyers) {
+    // Landscape A4 content width budget (px at capture size); date col reserved separately.
+    const AVAIL_WIDTH = 980;
+    const MIN_COL = 70;
+    const MAX_COL = 130;
+    const chunks = [];
+    let current = [];
+    let used = 0;
+
+    buyers.forEach((b) => {
+      const nameLen = (b.name || '').length;
+      const colW = Math.max(MIN_COL, Math.min(MAX_COL, nameLen * 12 + 20));
+      if (current.length && used + colW > AVAIL_WIDTH) {
+        chunks.push(current);
+        current = [];
+        used = 0;
+      }
+      current.push(b);
+      used += colW;
+    });
+    if (current.length) chunks.push(current);
+    return chunks.length ? chunks : [[]];
+  }
+
+  function renderLedger() {
+    const ym = getSelectedYM();
+    ensureMonth(ym);
+    saveData(DB);
+
+    const buyers = buyersForMonth(ym);
+    const host = $('ledgerHost');
+
+    if (!buyers.length) {
+      host.innerHTML = '<div class="mk-empty">No active buyers</div>';
+      return;
+    }
+
+    host.innerHTML = `<div class="mk-ledger-wrap" id="ledgerSheet">${buildLedgerInnerHtml(ym, buyers)}</div>`;
+  }
+
+  async function captureLedgerPdfPage(html, pageWpx, pageHpx) {
+    const root = document.createElement('div');
+    root.className = 'mk-ledger-pdf-root';
+    root.style.width = pageWpx + 'px';
+    root.style.height = pageHpx + 'px';
+    root.innerHTML = `<div class="mk-ledger-wrap mk-ledger-pdf-bw">${html}</div>`;
+    document.body.appendChild(root);
+    try {
+      const canvas = await html2canvas(root.firstElementChild, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        width: pageWpx,
+        height: pageHpx,
+        windowWidth: pageWpx,
+        windowHeight: pageHpx,
+        useCORS: true,
+        logging: false
+      });
+      return canvas;
+    } finally {
+      root.remove();
+    }
   }
 
   function bindLedger() {
@@ -905,8 +965,10 @@
     });
 
     $('downloadLedgerPdfBtn').addEventListener('click', async () => {
-      const sheet = $('ledgerSheet');
-      if (!sheet) {
+      const ym = getSelectedYM();
+      ensureMonth(ym);
+      const buyers = buyersForMonth(ym);
+      if (!buyers.length) {
         showToast('Open a month with buyers first');
         return;
       }
@@ -919,34 +981,38 @@
         showToast('PDF tools not loaded — try Print instead');
         return;
       }
+
       showToast('Creating PDF…');
       try {
-        const canvas = await html2canvas(sheet, {
-          backgroundColor: '#ffffff',
-          scale: 2,
-          useCORS: true,
-          logging: false
-        });
-        const img = canvas.toDataURL('image/png');
+        const chunks = chunkBuyersForPdf(buyers);
         const { jsPDF } = jspdfNS;
-        // Landscape A4 in mm
         const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-        const pageW = pdf.internal.pageSize.getWidth();
-        const pageH = pdf.internal.pageSize.getHeight();
-        const margin = 8;
-        const maxW = pageW - margin * 2;
-        const maxH = pageH - margin * 2;
-        const imgW = canvas.width;
-        const imgH = canvas.height;
-        const ratio = Math.min(maxW / imgW, maxH / imgH);
-        const drawW = imgW * ratio;
-        const drawH = imgH * ratio;
-        const x = (pageW - drawW) / 2;
-        const y = margin;
-        pdf.addImage(img, 'PNG', x, y, drawW, drawH);
-        const ym = getSelectedYM();
+        const pageWmm = pdf.internal.pageSize.getWidth();
+        const pageHmm = pdf.internal.pageSize.getHeight();
+        // Tiny margin so content fills the sheet
+        const margin = 4;
+        const drawW = pageWmm - margin * 2;
+        const drawH = pageHmm - margin * 2;
+        // Capture at A4 landscape pixel size (~150 dpi)
+        const pageWpx = Math.round(drawW / 25.4 * 150);
+        const pageHpx = Math.round(drawH / 25.4 * 150);
+
+        for (let i = 0; i < chunks.length; i++) {
+          const pageLabel = chunks.length > 1
+            ? ('Page ' + (i + 1) + ' of ' + chunks.length)
+            : '';
+          const html = buildLedgerInnerHtml(ym, chunks[i], { pageLabel });
+          const canvas = await captureLedgerPdfPage(html, pageWpx, pageHpx);
+          const img = canvas.toDataURL('image/jpeg', 0.95);
+          if (i > 0) pdf.addPage();
+          // Stretch to fill the printable area of landscape A4
+          pdf.addImage(img, 'JPEG', margin, margin, drawW, drawH);
+        }
+
         pdf.save(`milk-khata-ledger-${ym}.pdf`);
-        showToast('PDF downloaded ✅');
+        showToast(chunks.length > 1
+          ? ('PDF downloaded ✅ (' + chunks.length + ' pages)')
+          : 'PDF downloaded ✅');
       } catch (err) {
         console.error(err);
         showToast('PDF failed — try Print instead');
