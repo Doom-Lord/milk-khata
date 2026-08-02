@@ -108,18 +108,22 @@
       </div>
     </div>
     <div class="mk-form" style="margin-bottom:16px;">
-      <div class="mk-field-row">
-        <div class="mk-field">
-          <label for="newBuyerName">नया खरीदार</label>
-          <input id="newBuyerName" type="text" placeholder="जैसे: सुखबीर">
-        </div>
-        <div class="mk-field">
-          <label for="newBuyerRate">डिफ़ॉल्ट दर (₹/ली.)</label>
-          <input id="newBuyerRate" type="number" step="0.5" min="0" value="80">
-        </div>
+      <div class="mk-field">
+        <label for="newBuyerName">एक खरीदार जोड़ें</label>
+        <input id="newBuyerName" type="text" placeholder="जैसे: सुखबीर">
+        <p class="mk-tip">दर सेटिंग्स की डिफ़ॉल्ट दर से लगेगी। अलग दर हो तो जोड़ने के बाद <b>संपादित</b> करें।</p>
       </div>
       <div class="mk-actions">
         <button type="button" id="addBuyerBtn" class="mk-btn mk-btn--primary">+ जोड़ें</button>
+      </div>
+      <div class="mk-field" style="margin-top:16px;">
+        <label for="pasteBuyers">सूची पेस्ट करें <small>(एक नाम प्रति पंक्ति)</small></label>
+        <textarea id="pasteBuyers" rows="6" placeholder="सुखबीर&#10;राम&#10;गीता&#10;..."></textarea>
+        <p class="mk-tip" id="pasteBuyersTip">सभी पर सेटिंग्स की डिफ़ॉल्ट दर लगेगी। पहले से मौजूद नाम छोड़ दिए जाएँगे।</p>
+      </div>
+      <div class="mk-actions">
+        <button type="button" id="pasteBuyersBtn" class="mk-btn mk-btn--primary">📋 सूची से जोड़ें</button>
+        <button type="button" id="pasteClipboardBtn" class="mk-btn mk-btn--ghost">क्लिपबोर्ड से पेस्ट</button>
       </div>
       <div id="buyerError" class="mk-error"></div>
     </div>

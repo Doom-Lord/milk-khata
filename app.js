@@ -273,22 +273,76 @@
         DB.settings[key] = val;
         saveData(DB);
         updateBrandSubtitle();
-        if (key === 'defaultRate' && $('newBuyerRate')) {
-          $('newBuyerRate').value = DB.settings.defaultRate;
+        if (key === 'defaultRate') {
+          updatePasteBuyersTip();
         }
       });
     });
   }
 
   // ───────────────────────── Buyers ─────────────────────────
+  function updatePasteBuyersTip() {
+    const tip = $('pasteBuyersTip');
+    if (!tip) return;
+    const rate = DB.settings.defaultRate || 80;
+    tip.textContent = `सभी पर सेटिंग्स की डिफ़ॉल्ट दर ₹${fmtNum(rate)}/ली. लगेगी। अलग दर हो तो संपादित करें। पहले से मौजूद नाम छोड़ दिए जाएँगे।`;
+  }
+
+  function normalizeBuyerName(name) {
+    return String(name || '').trim().replace(/\s+/g, ' ');
+  }
+
+  function parseBuyerNames(raw) {
+    return String(raw || '')
+      .split(/[\n\r,;\t]+/)
+      .map(normalizeBuyerName)
+      .filter((n) => n.length > 0);
+  }
+
+  function addBuyersFromNames(names) {
+    const rate = parseFloat(DB.settings.defaultRate) || 80;
+    const existing = new Set(
+      DB.buyers
+        .filter((b) => b.active)
+        .map((b) => normalizeBuyerName(b.name).toLowerCase())
+    );
+    let maxOrder = DB.buyers.reduce((m, b) => Math.max(m, b.order || 0), 0);
+    let added = 0;
+    let skipped = 0;
+    const seenInPaste = new Set();
+
+    names.forEach((name) => {
+      const key = name.toLowerCase();
+      if (seenInPaste.has(key) || existing.has(key)) {
+        skipped += 1;
+        return;
+      }
+      seenInPaste.add(key);
+      existing.add(key);
+      maxOrder += 1;
+      DB.buyers.push({
+        id: uid('b'),
+        name,
+        defaultRate: rate,
+        active: true,
+        order: maxOrder
+      });
+      added += 1;
+    });
+
+    if (added > 0) saveData(DB);
+    return { added, skipped, rate };
+  }
+
   function renderBuyers() {
+    updatePasteBuyersTip();
     const list = $('buyerList');
     const buyers = allBuyersSorted();
     if (!buyers.length) {
       list.innerHTML = `
         <div class="mk-empty-cta">
           <h3>अभी कोई खरीदार नहीं</h3>
-          <p>ऊपर नाम और दर भरकर <b>+ जोड़ें</b> दबाएँ। उसके बाद एंट्री टैब में दूध लिख सकेंगे।</p>
+          <p>ऊपर एक नाम जोड़ें, या पूरी सूची पेस्ट करके <b>सूची से जोड़ें</b> दबाएँ। दर सेटिंग्स से लगेगी।</p>
         </div>`;
       return;
     }
@@ -314,25 +368,61 @@
 
   function bindBuyers() {
     $('addBuyerBtn').addEventListener('click', () => {
-      const name = $('newBuyerName').value.trim();
-      const rate = parseFloat($('newBuyerRate').value);
+      const name = normalizeBuyerName($('newBuyerName').value);
       const err = $('buyerError');
       if (!name) { err.textContent = 'कृपया नाम लिखें।'; return; }
-      if (!rate || rate <= 0) { err.textContent = 'कृपया सही दर लिखें।'; return; }
       err.textContent = '';
-      const maxOrder = DB.buyers.reduce((m, b) => Math.max(m, b.order || 0), 0);
-      DB.buyers.push({
-        id: uid('b'),
-        name,
-        defaultRate: rate,
-        active: true,
-        order: maxOrder + 1
-      });
-      saveData(DB);
+      const result = addBuyersFromNames([name]);
+      if (result.added === 0) {
+        err.textContent = 'यह खरीदार पहले से सूची में है।';
+        return;
+      }
       $('newBuyerName').value = '';
-      $('newBuyerRate').value = DB.settings.defaultRate || 80;
       renderBuyers();
-      showToast('खरीदार जोड़ा गया ✅');
+      showToast('खरीदार जोड़ा गया ✅ (दर ₹' + fmtNum(result.rate) + ')');
+    });
+
+    $('pasteBuyersBtn').addEventListener('click', () => {
+      const names = parseBuyerNames($('pasteBuyers').value);
+      const err = $('buyerError');
+      if (!names.length) {
+        err.textContent = 'कृपया नामों की सूची पेस्ट करें (एक पंक्ति में एक नाम)।';
+        return;
+      }
+      err.textContent = '';
+      const result = addBuyersFromNames(names);
+      if (result.added === 0) {
+        err.textContent = 'कोई नया नाम नहीं मिला — सभी पहले से मौजूद हैं।';
+        return;
+      }
+      $('pasteBuyers').value = '';
+      renderBuyers();
+      let msg = result.added + ' खरीदार जोड़े गए (दर ₹' + fmtNum(result.rate) + ')';
+      if (result.skipped) msg += ' · ' + result.skipped + ' छोड़ा';
+      showToast(msg + ' ✅');
+    });
+
+    $('pasteClipboardBtn').addEventListener('click', async () => {
+      const err = $('buyerError');
+      err.textContent = '';
+      try {
+        if (!navigator.clipboard || !navigator.clipboard.readText) {
+          err.textContent = 'क्लिपबोर्ड उपलब्ध नहीं — सूची बॉक्स में पेस्ट करें (Ctrl/Cmd+V)।';
+          $('pasteBuyers').focus();
+          return;
+        }
+        const text = await navigator.clipboard.readText();
+        $('pasteBuyers').value = text;
+        const names = parseBuyerNames(text);
+        if (!names.length) {
+          err.textContent = 'क्लिपबोर्ड में कोई नाम नहीं मिला।';
+          return;
+        }
+        showToast(names.length + ' नाम मिले — अब «सूची से जोड़ें» दबाएँ');
+      } catch (e) {
+        err.textContent = 'क्लिपबोर्ड पढ़ नहीं पाए — सूची बॉक्स में पेस्ट करें (Ctrl/Cmd+V)।';
+        $('pasteBuyers').focus();
+      }
     });
 
     $('buyerList').addEventListener('click', (e) => {
@@ -381,7 +471,7 @@
       const id = $('editBuyerId').value;
       const b = DB.buyers.find((x) => x.id === id);
       if (!b) return;
-      const name = $('editBuyerName').value.trim();
+      const name = normalizeBuyerName($('editBuyerName').value);
       const rate = parseFloat($('editBuyerRate').value);
       if (!name || !rate || rate <= 0) {
         showToast('नाम और दर सही भरें');
@@ -747,11 +837,6 @@
       ? options.map((b) => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.name)}${b.active ? '' : ' (निष्क्रिय)'}</option>`).join('')
       : '<option value="">— कोई खरीदार नहीं —</option>';
     if (prev && options.some((b) => b.id === prev)) sel.value = prev;
-
-    if (!$('newBuyerRate').dataset.init) {
-      $('newBuyerRate').value = DB.settings.defaultRate || 80;
-      $('newBuyerRate').dataset.init = '1';
-    }
   }
 
   function buildReceiptData(buyerId, ym) {

@@ -109,6 +109,10 @@ body{
 .mk-field input:focus, .mk-field textarea:focus, .mk-field select:focus{
   outline: 2px solid var(--gold); outline-offset: 1px; background:#fff;
 }
+.mk-field textarea{
+  min-height: 120px; resize: vertical; line-height:1.5;
+  font-family: inherit;
+}
 .mk-field-row{
   display:grid; grid-template-columns: 1fr 1fr; gap:12px;
 }
