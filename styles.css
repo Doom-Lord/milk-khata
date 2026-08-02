@@ -1,6 +1,5 @@
 :root{
   --paper: #f7efdc;
-  --paper-line: rgba(154,43,43,0.16);
   --paper-margin: rgba(154,43,43,0.35);
   --red: #9a2b2b;
   --red-deep: #6f1f1f;
@@ -117,12 +116,10 @@ body{
 }
 
 .mk-form{
-  background:
-    linear-gradient(90deg, transparent 0 38px, var(--paper-margin) 38px 40px, transparent 40px 100%),
-    repeating-linear-gradient(var(--white), var(--white) 30px, var(--paper-line) 31px);
+  background: var(--white);
   border: 1px solid var(--paper-margin);
   border-radius: 8px;
-  padding: 20px 20px 22px 46px;
+  padding: 20px 20px 22px;
   box-shadow: 0 6px 18px var(--shadow);
 }
 .mk-card{
