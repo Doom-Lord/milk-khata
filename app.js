@@ -828,11 +828,11 @@
     }
 
     const s = DB.settings;
-    let html = `<div class="mk-ledger-wrap">
+    let html = `<div class="mk-ledger-wrap" id="ledgerSheet">
       <div class="mk-ledger-header">
-        <div class="mk-receipt-shri">${escapeHtml(s.tagline || 'जय दादा बिशादे की')}</div>
-        <h3>${escapeHtml(s.farmName || 'Dairy Farm')}</h3>
-        <p>${s.contactMobile ? '📞 ' + escapeHtml(s.contactMobile) + ' · ' : ''}${escapeHtml(monthLabel(ym))}</p>
+        <div class="mk-ledger-header-farm">${escapeHtml(s.farmName || 'Dairy Farm')}</div>
+        <div class="mk-ledger-header-month">${escapeHtml(monthLabel(ym))}</div>
+        <div class="mk-ledger-header-phone">${s.contactMobile ? '📞 ' + escapeHtml(s.contactMobile) : ''}</div>
       </div>
       <table class="mk-ledger-table"><thead><tr><th>Date</th>`;
 
@@ -891,11 +891,9 @@
   function bindLedger() {
     $('printLedgerBtn').addEventListener('click', () => {
       printMode = 'ledger';
-      // Mark ledger for print visibility
       document.querySelectorAll('.mk-print-only').forEach((el) => el.classList.remove('mk-print-only'));
       const host = $('ledgerHost');
       host.classList.add('mk-print-only');
-      // Inject landscape page style
       let styleEl = $('printPageStyle');
       if (!styleEl) {
         styleEl = document.createElement('style');
@@ -904,6 +902,55 @@
       }
       styleEl.textContent = '@page { size: landscape; margin: 8mm; }';
       window.print();
+    });
+
+    $('downloadLedgerPdfBtn').addEventListener('click', async () => {
+      const sheet = $('ledgerSheet');
+      if (!sheet) {
+        showToast('Open a month with buyers first');
+        return;
+      }
+      if (typeof html2canvas !== 'function') {
+        showToast('PDF tools not loaded — try Print instead');
+        return;
+      }
+      const jspdfNS = window.jspdf;
+      if (!jspdfNS || !jspdfNS.jsPDF) {
+        showToast('PDF tools not loaded — try Print instead');
+        return;
+      }
+      showToast('Creating PDF…');
+      try {
+        const canvas = await html2canvas(sheet, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true,
+          logging: false
+        });
+        const img = canvas.toDataURL('image/png');
+        const { jsPDF } = jspdfNS;
+        // Landscape A4 in mm
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const pageW = pdf.internal.pageSize.getWidth();
+        const pageH = pdf.internal.pageSize.getHeight();
+        const margin = 8;
+        const maxW = pageW - margin * 2;
+        const maxH = pageH - margin * 2;
+        const imgW = canvas.width;
+        const imgH = canvas.height;
+        const ratio = Math.min(maxW / imgW, maxH / imgH);
+        const drawW = imgW * ratio;
+        const drawH = imgH * ratio;
+        const x = (pageW - drawW) / 2;
+        const y = margin;
+        pdf.addImage(img, 'PNG', x, y, drawW, drawH);
+        const ym = getSelectedYM();
+        pdf.save(`milk-khata-ledger-${ym}.pdf`);
+        showToast('PDF downloaded ✅');
+      } catch (err) {
+        console.error(err);
+        showToast('PDF failed — try Print instead');
+      }
     });
   }
 

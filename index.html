@@ -52,10 +52,11 @@
     <div class="mk-panel-head">
       <div>
         <h2>Monthly Ledger</h2>
-        <p>Full register — Print / PDF (landscape)</p>
+        <p>Full register — Print or download PDF (landscape)</p>
       </div>
       <div class="mk-toolbar">
-        <button type="button" class="mk-btn mk-btn--primary" id="printLedgerBtn">🖨️ Print / PDF</button>
+        <button type="button" class="mk-btn mk-btn--primary" id="printLedgerBtn">🖨️ Print</button>
+        <button type="button" class="mk-btn mk-btn--ghost" id="downloadLedgerPdfBtn">⬇️ Download PDF</button>
       </div>
     </div>
     <div id="ledgerMonthPicker" class="mk-month-picker mk-month-picker--bar" data-role="month-picker"></div>
@@ -221,6 +222,7 @@
 <div id="toast" class="mk-toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
