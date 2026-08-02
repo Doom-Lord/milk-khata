@@ -774,10 +774,29 @@
 
     // Enter moves down the same buyer column (one buyer at a time).
     // Tab moves to the next buyer on the same day.
+    // Backspace / Delete clears the whole cell so it can be rewritten.
     $('entryGridHost').addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter' && e.key !== 'Tab') return;
       const input = e.target;
       if (!input.matches('input[data-buyer]')) return;
+
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        const ym = getSelectedYM();
+        ensureMonth(ym);
+        const buyerId = input.dataset.buyer;
+        const day = input.dataset.day;
+        input.value = '';
+        if (DB.months[ym] && DB.months[ym].buyers[buyerId]) {
+          delete DB.months[ym].buyers[buyerId].days[String(day)];
+          saveData(DB);
+          refreshEntryFooter();
+        }
+        // Keep focus so the corrected value can be typed immediately
+        input.focus();
+        return;
+      }
+
+      if (e.key !== 'Enter' && e.key !== 'Tab') return;
       e.preventDefault();
       const col = parseInt(input.dataset.col, 10);
       const day = parseInt(input.dataset.day, 10);
