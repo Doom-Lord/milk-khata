@@ -966,28 +966,41 @@
 
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
-    const margin = 5;
+    const margin = 4.5;
     const left = margin;
     const top = margin;
     const right = pageW - margin;
     const bottom = pageH - margin;
     const width = right - left;
 
-    // Layout: header band + table (day rows + col header + 5 footer) + totals line
-    const headerH = 8;
-    const totalsH = 6;
-    const tableTop = top + headerH;
+    // Title band
+    const titleH = 7.5;
+    const totalsH = 5.5;
+    const tableTop = top + titleH;
     const tableBottom = bottom - totalsH;
     const tableH = tableBottom - tableTop;
-    const footerCount = 5;
-    const rowCount = 1 + numDays + footerCount; // header + days + footers
-    let rowH = tableH / rowCount;
-    let fontSize = Math.min(8, Math.max(4.2, rowH * 0.72));
-    let nameFont = Math.min(fontSize, 6.5);
 
-    // Columns: Date + buyers — equal width for buyers so all fit on one page
-    const dateW = Math.max(10, Math.min(14, width * 0.045));
+    // Columns: Date + equal buyer columns (all on one landscape page)
+    const dateW = Math.max(11, Math.min(13, width * 0.04));
     const buyerW = (width - dateW) / Math.max(buyers.length, 1);
+
+    // Buyer names drawn vertically so they stay legible on one page
+    const nameFont = buyerW >= 12 ? 9 : buyerW >= 9 ? 8 : 7;
+    pdf.setFont('NotoSansDevanagari', 'normal');
+    pdf.setFontSize(nameFont);
+    let longestNameW = 0;
+    buyers.forEach((b) => {
+      const w = pdf.getTextWidth(String(b.name || ''));
+      if (w > longestNameW) longestNameW = w;
+    });
+    // Header row tall enough for full rotated names (+ padding)
+    const nameHeaderH = Math.min(48, Math.max(24, longestNameW + 5));
+
+    const footerCount = 5;
+    const bodyRows = numDays + footerCount;
+    const bodyH = tableH - nameHeaderH;
+    const rowH = bodyH / bodyRows;
+    const fontSize = Math.min(7.5, Math.max(4.5, rowH * 0.7));
 
     const calcs = buyers.map((b) =>
       calcBuyer(monthData.buyers[b.id] || { rate: 0, openingBalance: 0, adjustment: 0, days: {} })
@@ -1002,86 +1015,95 @@
     pdf.setDrawColor(0);
     pdf.setTextColor(0);
     pdf.setFillColor(255, 255, 255);
+    pdf.setLineWidth(0.25);
 
-    // Header: farm | month | phone
+    // Title: farm | month | phone
     pdf.setFont('NotoSansDevanagari', 'normal');
     pdf.setFontSize(11);
-    const farm = fitPdfText(pdf, s.farmName || 'Dairy Farm', width * 0.34, 11);
-    pdf.text(farm, left, top + 5.2, { align: 'left' });
-
+    pdf.text(fitPdfText(pdf, s.farmName || 'Dairy Farm', width * 0.34, 11), left, top + 4.8, { align: 'left' });
     pdf.setFontSize(10);
-    const mLabel = fitPdfText(pdf, monthLabel(ym), width * 0.3, 10);
-    pdf.text(mLabel, left + width / 2, top + 5.2, { align: 'center' });
-
+    pdf.text(fitPdfText(pdf, monthLabel(ym), width * 0.3, 10), left + width / 2, top + 4.8, { align: 'center' });
     pdf.setFontSize(9);
-    const phone = fitPdfText(pdf, s.contactMobile || '', width * 0.34, 9);
-    pdf.text(phone, right, top + 5.2, { align: 'right' });
-    pdf.setLineWidth(0.35);
-    pdf.line(left, top + headerH - 1.2, right, top + headerH - 1.2);
+    pdf.text(fitPdfText(pdf, s.contactMobile || '', width * 0.34, 9), right, top + 4.8, { align: 'right' });
+    pdf.setLineWidth(0.4);
+    pdf.line(left, top + titleH - 1, right, top + titleH - 1);
 
     function colX(i) {
       return left + dateW + i * buyerW;
     }
 
-    function drawCellText(str, x, y, w, align, size, bold) {
+    function drawCellText(str, x, y, w, align, size) {
       pdf.setFont('NotoSansDevanagari', 'normal');
       pdf.setFontSize(size);
-      const t = fitPdfText(pdf, str, w - 1.2, size);
-      const tx = align === 'center' ? x + w / 2 : align === 'right' ? x + w - 0.6 : x + 0.6;
+      const t = fitPdfText(pdf, str, w - 1.0, size);
+      const tx = align === 'center' ? x + w / 2 : align === 'right' ? x + w - 0.5 : x + 0.5;
       pdf.text(t, tx, y, { align: align || 'left' });
     }
 
-    // Table outer border
+    // Table border
     pdf.setLineWidth(0.25);
     pdf.rect(left, tableTop, width, tableH);
 
-    // Vertical lines
+    // Vertical grid lines
     pdf.line(left + dateW, tableTop, left + dateW, tableBottom);
     for (let i = 1; i < buyers.length; i++) {
-      const x = colX(i);
-      pdf.line(x, tableTop, x, tableBottom);
+      pdf.line(colX(i), tableTop, colX(i), tableBottom);
     }
 
-    // Column header row
-    let y = tableTop;
-    pdf.line(left, y + rowH, right, y + rowH);
-    const textY = (row) => tableTop + row * rowH + rowH * 0.68;
-    drawCellText('Date', left, textY(0), dateW, 'center', fontSize, true);
+    // Name header separator
+    const nameBottom = tableTop + nameHeaderH;
+    pdf.line(left, nameBottom, right, nameBottom);
+
+    // "Date" label in name header (horizontal)
+    drawCellText('Date', left, tableTop + nameHeaderH / 2 + fontSize * 0.25, dateW, 'center', Math.min(8, fontSize + 1));
+
+    // Buyer names — vertical (90°), bottom-up, larger type, full name when possible
+    pdf.setFont('NotoSansDevanagari', 'normal');
+    pdf.setFontSize(nameFont);
     buyers.forEach((b, i) => {
-      drawCellText(b.name, colX(i), textY(0), buyerW, 'center', nameFont, true);
+      const name = String(b.name || '');
+      const maxH = nameHeaderH - 3;
+      const label = fitPdfText(pdf, name, maxH, nameFont);
+      const cx = colX(i) + buyerW / 2 + nameFont * 0.12;
+      const by = nameBottom - 1.5;
+      // angle 90 = vertical text reading upward
+      pdf.text(label, cx, by, { angle: 90, align: 'left' });
     });
 
-    // Day rows
+    // Body rows: days then footers
+    function bodyTextY(bodyRow) {
+      return nameBottom + bodyRow * rowH + rowH * 0.68;
+    }
+
     for (let d = 1; d <= numDays; d++) {
-      const row = d; // 0 is header
-      pdf.line(left, tableTop + (row + 1) * rowH, right, tableTop + (row + 1) * rowH);
-      drawCellText(String(d), left, textY(row), dateW, 'center', fontSize, true);
+      const bodyRow = d - 1;
+      pdf.line(left, nameBottom + (bodyRow + 1) * rowH, right, nameBottom + (bodyRow + 1) * rowH);
+      drawCellText(String(d), left, bodyTextY(bodyRow), dateW, 'center', fontSize);
       buyers.forEach((b, i) => {
         const entry = monthData.buyers[b.id];
         const val = entry && entry.days ? entry.days[String(d)] : undefined;
         const display = (val === undefined || val === null || val === '') ? '' : fmtNum(val);
-        drawCellText(display, colX(i), textY(row), buyerW, 'center', fontSize, false);
+        drawCellText(display, colX(i), bodyTextY(bodyRow), buyerW, 'center', fontSize);
       });
     }
 
-    // Footer rows
     const footers = ledgerFooterRows();
     footers.forEach((fr, fi) => {
-      const row = 1 + numDays + fi;
+      const bodyRow = numDays + fi;
       if (fi < footers.length - 1) {
-        pdf.line(left, tableTop + (row + 1) * rowH, right, tableTop + (row + 1) * rowH);
+        pdf.line(left, nameBottom + (bodyRow + 1) * rowH, right, nameBottom + (bodyRow + 1) * rowH);
       }
-      drawCellText(fr.label, left, textY(row), dateW, 'center', Math.max(4, fontSize - 0.3), true);
+      drawCellText(fr.label, left, bodyTextY(bodyRow), dateW, 'center', Math.max(4.2, fontSize - 0.2));
       calcs.forEach((c, i) => {
-        drawCellText(fr.get(c), colX(i), textY(row), buyerW, 'center', fontSize, true);
+        drawCellText(fr.get(c), colX(i), bodyTextY(bodyRow), buyerW, 'center', fontSize);
       });
     });
 
-    // Totals under table
+    // Farm totals
     pdf.setFont('NotoSansDevanagari', 'normal');
     pdf.setFontSize(8);
     const totals = 'Total milk: ' + fmtNum(farmLitres) + ' L    Total Amount: ' + fmtRupee(farmAmount) + '    Total NET: ' + fmtRupee(farmNet);
-    pdf.text(fitPdfText(pdf, totals, width, 8), left, bottom - 1.5, { align: 'left' });
+    pdf.text(fitPdfText(pdf, totals, width, 8), left, bottom - 1.2, { align: 'left' });
   }
 
   function bindLedger() {
