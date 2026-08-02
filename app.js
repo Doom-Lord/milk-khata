@@ -219,7 +219,7 @@
 
   // Sync month selectors
   function syncMonthInputs(ym) {
-    ['entryMonth', 'ledgerMonth', 'receiptMonth'].forEach((id) => {
+    ['entryMonth', 'ledgerMonth', 'receiptMonth', 'buyersMonth'].forEach((id) => {
       const el = $(id);
       if (el && el.value !== ym) el.value = ym;
     });
@@ -238,6 +238,10 @@
     });
     $('receiptMonth').addEventListener('change', () => {
       syncMonthInputs($('receiptMonth').value);
+    });
+    $('buyersMonth').addEventListener('change', () => {
+      syncMonthInputs($('buyersMonth').value);
+      renderBuyers();
     });
   }
 
@@ -338,6 +342,11 @@
     updatePasteBuyersTip();
     const list = $('buyerList');
     const buyers = allBuyersSorted();
+    const ym = ($('buyersMonth') && $('buyersMonth').value) || currentYM();
+    ensureMonth(ym);
+    saveData(DB);
+    const monthData = DB.months[ym];
+
     if (!buyers.length) {
       list.innerHTML = `
         <div class="mk-empty-cta">
@@ -346,11 +355,37 @@
         </div>`;
       return;
     }
-    list.innerHTML = buyers.map((b, idx) => `
+    list.innerHTML = buyers.map((b, idx) => {
+      const entry = monthData.buyers[b.id] || {
+        rate: b.defaultRate,
+        openingBalance: 0,
+        adjustment: 0,
+        days: {}
+      };
+      // Inactive buyers may not have a month row yet
+      if (!monthData.buyers[b.id] && b.active) {
+        // ensureMonth should have created it for active; leave as-is
+      }
+      const c = calcBuyer(entry);
+      const rateVal = monthData.buyers[b.id] ? entry.rate : b.defaultRate;
+      const openingVal = monthData.buyers[b.id] ? entry.openingBalance : 0;
+      const adjVal = monthData.buyers[b.id] ? entry.adjustment : 0;
+      return `
       <div class="mk-buyer-item ${b.active ? '' : 'mk-buyer-item--inactive'}" data-id="${escapeHtml(b.id)}">
         <div class="mk-buyer-info">
           <strong>${escapeHtml(b.name)}</strong>
-          <span>दर ₹${fmtNum(b.defaultRate)}/ली. · ${b.active ? 'सक्रिय' : 'निष्क्रिय'}</span>
+          <span>${b.active ? 'सक्रिय' : 'निष्क्रिय'} · ${escapeHtml(hindiMonthLabel(ym))} · ${fmtNum(c.total)} ली · NET ${fmtRupee(c.net)}</span>
+        </div>
+        <div class="mk-buyer-finance">
+          <label>दर ₹
+            <input type="number" step="0.5" min="0" inputmode="decimal" data-fin="rate" value="${fmtNum(rateVal)}" ${b.active ? '' : 'disabled'}>
+          </label>
+          <label>पिछला बकाया
+            <input type="number" step="1" inputmode="decimal" data-fin="openingBalance" value="${fmtNum(openingVal)}" ${b.active && monthData.buyers[b.id] ? '' : 'disabled'}>
+          </label>
+          <label>समायोजन ±
+            <input type="number" step="1" inputmode="decimal" data-fin="adjustment" value="${fmtNum(adjVal)}" ${b.active && monthData.buyers[b.id] ? '' : 'disabled'}>
+          </label>
         </div>
         <div class="mk-buyer-actions">
           <button type="button" class="mk-btn mk-btn--ghost mk-btn--sm" data-act="up" ${idx === 0 ? 'disabled' : ''}>↑</button>
@@ -358,8 +393,8 @@
           <button type="button" class="mk-btn mk-btn--ghost mk-btn--sm" data-act="edit">संपादित</button>
           <button type="button" class="mk-btn mk-btn--danger mk-btn--sm" data-act="toggle">${b.active ? 'हटाएँ' : 'वापस लाएँ'}</button>
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
   }
 
   function reindexOrders() {
@@ -454,10 +489,49 @@
         showToast(buyers[idx].active ? 'खरीदार सक्रिय ✅' : 'खरीदार निष्क्रिय (इतिहास सुरक्षित)');
       }
       if (act === 'edit') {
+        const ym = ($('buyersMonth') && $('buyersMonth').value) || currentYM();
+        ensureMonth(ym);
+        const entry = DB.months[ym].buyers[buyers[idx].id] || {
+          rate: buyers[idx].defaultRate,
+          openingBalance: 0,
+          adjustment: 0
+        };
         $('editBuyerId').value = buyers[idx].id;
         $('editBuyerName').value = buyers[idx].name;
-        $('editBuyerRate').value = buyers[idx].defaultRate;
+        $('editBuyerRate').value = buyers[idx].active && entry.rate != null ? entry.rate : buyers[idx].defaultRate;
+        $('editBuyerOpening').value = entry.openingBalance || 0;
+        $('editBuyerAdj').value = entry.adjustment || 0;
         $('buyerModal').classList.add('mk-modal-backdrop--show');
+      }
+    });
+
+    $('buyerList').addEventListener('input', (e) => {
+      const input = e.target;
+      if (!input.matches('input[data-fin]')) return;
+      const item = input.closest('.mk-buyer-item');
+      if (!item) return;
+      const id = item.dataset.id;
+      const buyer = DB.buyers.find((b) => b.id === id);
+      if (!buyer || !buyer.active) return;
+      const ym = ($('buyersMonth') && $('buyersMonth').value) || currentYM();
+      ensureMonth(ym);
+      const field = input.dataset.fin;
+      const val = input.value === '' ? 0 : parseFloat(input.value) || 0;
+      if (field === 'rate') {
+        if (val <= 0) return;
+        buyer.defaultRate = val;
+        DB.months[ym].buyers[id].rate = val;
+      } else if (field === 'openingBalance') {
+        DB.months[ym].buyers[id].openingBalance = val;
+      } else if (field === 'adjustment') {
+        DB.months[ym].buyers[id].adjustment = val;
+      }
+      saveData(DB);
+      const entry = DB.months[ym].buyers[id];
+      const c = calcBuyer(entry);
+      const info = item.querySelector('.mk-buyer-info span');
+      if (info) {
+        info.textContent = `सक्रिय · ${hindiMonthLabel(ym)} · ${fmtNum(c.total)} ली · NET ${fmtRupee(c.net)}`;
       }
     });
 
@@ -473,12 +547,21 @@
       if (!b) return;
       const name = normalizeBuyerName($('editBuyerName').value);
       const rate = parseFloat($('editBuyerRate').value);
+      const opening = parseFloat($('editBuyerOpening').value) || 0;
+      const adj = parseFloat($('editBuyerAdj').value) || 0;
       if (!name || !rate || rate <= 0) {
         showToast('नाम और दर सही भरें');
         return;
       }
       b.name = name;
       b.defaultRate = rate;
+      const ym = ($('buyersMonth') && $('buyersMonth').value) || currentYM();
+      ensureMonth(ym);
+      if (DB.months[ym].buyers[id]) {
+        DB.months[ym].buyers[id].rate = rate;
+        DB.months[ym].buyers[id].openingBalance = opening;
+        DB.months[ym].buyers[id].adjustment = adj;
+      }
       saveData(DB);
       $('buyerModal').classList.remove('mk-modal-backdrop--show');
       renderBuyers();
@@ -500,10 +583,7 @@
     const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
     const todayDay = isCurrentMonth ? today.getDate() : null;
 
-    // Meta cards per buyer
-    const meta = $('entryMeta');
     if (!buyers.length) {
-      meta.innerHTML = '';
       $('entryGridHost').innerHTML = `
         <div class="mk-empty-cta">
           <h3>दूध एंट्री शुरू करें</h3>
@@ -521,33 +601,8 @@
       return;
     }
 
-    meta.innerHTML = buyers.map((b) => {
-      const entry = monthData.buyers[b.id];
-      const c = calcBuyer(entry);
-      return `
-        <div class="mk-meta-card" data-buyer="${escapeHtml(b.id)}">
-          <h3>${escapeHtml(b.name)}</h3>
-          <div class="mk-meta-row">
-            <label>दर ₹</label>
-            <input type="number" step="0.5" min="0" data-field="rate" inputmode="decimal" value="${fmtNum(entry.rate)}">
-          </div>
-          <div class="mk-meta-row">
-            <label>पिछला बकाया</label>
-            <input type="number" step="1" data-field="openingBalance" inputmode="decimal" value="${fmtNum(entry.openingBalance)}">
-          </div>
-          <div class="mk-meta-row">
-            <label>समायोजन ±</label>
-            <input type="number" step="1" data-field="adjustment" inputmode="decimal" value="${fmtNum(entry.adjustment)}">
-          </div>
-          <div class="mk-meta-row">
-            <label>कुल / NET</label>
-            <span class="mk-meta-net">${fmtNum(c.total)} ली · ${fmtRupee(c.net)}</span>
-          </div>
-        </div>`;
-    }).join('');
-
     // Grid
-    let html = '<p class="mk-entry-tip">💡 खाली सेल पर टैप करके लीटर लिखें। Enter/Tab = उसी दिन अगला खरीदार।</p>';
+    let html = '<p class="mk-entry-tip">💡 खाली सेल पर टैप करके लीटर लिखें। दर / बकाया <b>खरीदार</b> टैब में सेट करें। Enter/Tab = अगला खरीदार।</p>';
     html += '<div class="mk-grid-scroll"><table class="mk-entry-table"><thead><tr><th>तारीख</th>';
     buyers.forEach((b) => {
       html += `<th class="mk-col-buyer">${escapeHtml(b.name)}</th>`;
@@ -568,14 +623,12 @@
       html += '</tr>';
     }
 
-    // Footer totals
+    // Footer totals (litres only on entry — money lives with buyers/ledger)
     html += '<tr class="mk-footer-row"><td>कुल</td>';
-    let farmLitres = 0, farmAmount = 0, farmNet = 0;
+    let farmLitres = 0;
     buyers.forEach((b) => {
       const c = calcBuyer(monthData.buyers[b.id]);
       farmLitres += c.total;
-      farmAmount += c.amount;
-      farmNet += c.net;
       html += `<td>${fmtNum(c.total)}</td>`;
     });
     html += '</tr></tbody></table></div>';
@@ -583,39 +636,25 @@
 
     $('entryTotals').innerHTML =
       `<span>कुल दूध: <b>${fmtNum(farmLitres)} ली.</b></span>` +
-      `<span>कुल राशि: <b>${fmtRupee(farmAmount)}</b></span>` +
-      `<span>कुल NET: <b>${fmtRupee(farmNet)}</b></span>`;
+      `<span class="mk-tip">दर और बकाया → खरीदार टैब</span>`;
   }
 
-  function refreshEntryMetaAndFooter() {
-    // Lightweight update of meta nets + footer without full re-render (keeps focus)
+  function refreshEntryFooter() {
     const ym = $('entryMonth').value;
     const monthData = DB.months[ym];
     if (!monthData) return;
     const buyers = buyersForMonth(ym);
 
-    document.querySelectorAll('#entryMeta .mk-meta-card').forEach((card) => {
-      const id = card.dataset.buyer;
-      const entry = monthData.buyers[id];
-      if (!entry) return;
-      const c = calcBuyer(entry);
-      const netEl = card.querySelector('.mk-meta-net');
-      if (netEl) netEl.textContent = `${fmtNum(c.total)} ली · ${fmtRupee(c.net)}`;
-    });
-
     const footerCells = document.querySelectorAll('.mk-entry-table .mk-footer-row td');
-    let farmLitres = 0, farmAmount = 0, farmNet = 0;
+    let farmLitres = 0;
     buyers.forEach((b, i) => {
       const c = calcBuyer(monthData.buyers[b.id]);
       farmLitres += c.total;
-      farmAmount += c.amount;
-      farmNet += c.net;
       if (footerCells[i + 1]) footerCells[i + 1].textContent = fmtNum(c.total);
     });
     $('entryTotals').innerHTML =
       `<span>कुल दूध: <b>${fmtNum(farmLitres)} ली.</b></span>` +
-      `<span>कुल राशि: <b>${fmtRupee(farmAmount)}</b></span>` +
-      `<span>कुल NET: <b>${fmtRupee(farmNet)}</b></span>`;
+      `<span class="mk-tip">दर और बकाया → खरीदार टैब</span>`;
   }
 
   function bindEntry() {
@@ -641,19 +680,6 @@
       showToast('आज की पंक्ति तैयार — दूध लिखें');
     });
 
-    $('entryMeta').addEventListener('input', (e) => {
-      const input = e.target;
-      if (!input.matches('input[data-field]')) return;
-      const card = input.closest('.mk-meta-card');
-      const buyerId = card.dataset.buyer;
-      const ym = $('entryMonth').value;
-      ensureMonth(ym);
-      const field = input.dataset.field;
-      DB.months[ym].buyers[buyerId][field] = input.value === '' ? 0 : parseFloat(input.value) || 0;
-      saveData(DB);
-      refreshEntryMetaAndFooter();
-    });
-
     $('entryGridHost').addEventListener('input', (e) => {
       const input = e.target;
       if (!input.matches('input[data-buyer]')) return;
@@ -671,7 +697,7 @@
         }
       }
       saveData(DB);
-      refreshEntryMetaAndFooter();
+      refreshEntryFooter();
     });
 
     // Enter / Tab moves to next buyer same day; at end of row → next day first buyer
@@ -1090,6 +1116,27 @@
         e.target.value = '';
       };
       reader.readAsText(file);
+    });
+
+    $('clearDataBtn').addEventListener('click', () => {
+      const ok = confirm(
+        'सारा Milk Khata डेटा मिट जाएगा (खरीदार, एंट्री, सेटिंग्स)।\n\n' +
+        'अगर बैकअप नहीं लिया, पहले Cancel दबाकर Export करें।\n\nक्या सच में मिटाना है?'
+      );
+      if (!ok) return;
+      const ok2 = confirm('आखिरी पुष्टि: डेटा हमेशा के लिए मिट जाएगा।');
+      if (!ok2) return;
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(LEGACY_NAME);
+        localStorage.removeItem(LEGACY_MOBILE);
+        // Remove any other mk_ keys
+        Object.keys(localStorage).forEach((k) => {
+          if (k.indexOf('mk_') === 0) localStorage.removeItem(k);
+        });
+      } catch (e) { /* ignore */ }
+      showToast('डेटा साफ़ हो गया — रीलोड…');
+      setTimeout(() => { window.location.reload(); }, 400);
     });
   }
 

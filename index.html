@@ -35,7 +35,7 @@
     <div class="mk-panel-head">
       <div>
         <h2>मासिक एंट्री</h2>
-        <p>हर दिन प्रत्येक खरीदार का दूध लिखें</p>
+        <p>सिर्फ रोज़ का दूध — दर और बकाया खरीदार टैब में</p>
       </div>
       <div class="mk-toolbar">
         <label class="mk-tip" for="entryMonth">महीना</label>
@@ -43,7 +43,6 @@
         <button type="button" class="mk-btn mk-btn--primary mk-btn--sm" id="jumpTodayBtn">✍️ आज का दूध लिखें</button>
       </div>
     </div>
-    <div id="entryMeta" class="mk-meta-strip"></div>
     <div id="entryGridHost"></div>
     <div id="entryTotals" class="mk-totals-bar"></div>
   </section>
@@ -104,7 +103,11 @@
     <div class="mk-panel-head">
       <div>
         <h2>खरीदार सूची</h2>
-        <p>नाम, दर, क्रम — इतिहास सुरक्षित रहता है</p>
+        <p>नाम, दर, पिछला बकाया — दूध एंट्री अलग टैब में</p>
+      </div>
+      <div class="mk-toolbar">
+        <label class="mk-tip" for="buyersMonth">महीने का बकाया</label>
+        <input type="month" id="buyersMonth" class="mk-input-inline">
       </div>
     </div>
     <div class="mk-form" style="margin-bottom:16px;">
@@ -176,6 +179,17 @@
         <input type="file" id="importFile" accept="application/json,.json" hidden>
       </div>
     </div>
+
+    <div class="mk-card" style="margin-top:16px;">
+      <h3 style="margin:0 0 10px;font-family:'Zilla Slab',Georgia,serif;color:var(--red-deep);font-size:16px;">डेटा साफ़ करें</h3>
+      <div class="mk-warn-box">
+        Safari में साइट कैश साफ़ करना मुश्किल हो सकता है। यह बटन इस ऐप का सारा सेव्ड डेटा मिटा देगा
+        (खरीदार, एंट्री, सेटिंग्स)। पहले Export लेना सुरक्षित है।
+      </div>
+      <div class="mk-actions">
+        <button type="button" id="clearDataBtn" class="mk-btn mk-btn--danger">🗑️ सारा डेटा मिटाएँ / कैश साफ़</button>
+      </div>
+    </div>
   </section>
 
 </div>
@@ -190,8 +204,17 @@
       <input id="editBuyerName" type="text">
     </div>
     <div class="mk-field">
-      <label for="editBuyerRate">डिफ़ॉल्ट दर (₹/ली.)</label>
+      <label for="editBuyerRate">दर (₹/ली.)</label>
       <input id="editBuyerRate" type="number" step="0.5" min="0">
+      <p class="mk-tip">इस महीने की दर भी अपडेट होगी।</p>
+    </div>
+    <div class="mk-field">
+      <label for="editBuyerOpening">पिछला बकाया (₹) <small>— चुने हुए महीने के लिए</small></label>
+      <input id="editBuyerOpening" type="number" step="1" value="0">
+    </div>
+    <div class="mk-field">
+      <label for="editBuyerAdj">समायोजन ± (₹)</label>
+      <input id="editBuyerAdj" type="number" step="1" value="0">
     </div>
     <div class="mk-actions">
       <button type="button" id="saveBuyerBtn" class="mk-btn mk-btn--primary">सेव करें</button>

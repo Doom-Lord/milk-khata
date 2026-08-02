@@ -162,7 +162,7 @@ body{
 /* ---------- Buyers list ---------- */
 .mk-buyer-list{ display:flex; flex-direction:column; gap:10px; }
 .mk-buyer-item{
-  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  display:flex; align-items:flex-start; gap:10px; flex-wrap:wrap;
   background: var(--white);
   border: 1px solid var(--paper-margin);
   border-radius: 8px;
@@ -173,7 +173,24 @@ body{
 .mk-buyer-info{ flex:1; min-width:140px; }
 .mk-buyer-info strong{ display:block; font-size:15px; color:var(--red-deep); }
 .mk-buyer-info span{ font-size:12.5px; color:var(--ink-soft); }
-.mk-buyer-actions{ display:flex; gap:6px; flex-wrap:wrap; }
+.mk-buyer-finance{
+  display:flex; flex-wrap:wrap; gap:8px 12px;
+  align-items:flex-end;
+  width: 100%;
+}
+.mk-buyer-finance label{
+  display:flex; flex-direction:column; gap:3px;
+  font-size:11.5px; font-weight:600; color:var(--ink-soft);
+}
+.mk-buyer-finance input{
+  width: 96px; font-family:inherit; font-size:13.5px;
+  border:1px solid var(--paper-margin); border-radius:5px;
+  padding:6px 8px; background:rgba(255,255,255,0.95); color:var(--ink);
+}
+.mk-buyer-finance input:focus{
+  outline:2px solid var(--gold); outline-offset:1px;
+}
+.mk-buyer-actions{ display:flex; gap:6px; flex-wrap:wrap; margin-left:auto; }
 .mk-empty{
   text-align:center; color:var(--ink-soft); font-size:14px;
   padding: 36px 12px; font-style:italic;
