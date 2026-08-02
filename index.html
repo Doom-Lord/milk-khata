@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Milk Khata · दूध बिल जनरेटर</title>
+<title>Milk Khata · Milk Bill Generator</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A5%9B%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
@@ -17,30 +17,30 @@
       <span class="mk-brand-emoji">🥛</span>
       <div>
         <h1>Milk Khata</h1>
-        <p id="brandSubtitle">दूध बिल · मासिक खाता</p>
+        <p id="brandSubtitle">Milk bill · Monthly ledger</p>
       </div>
     </div>
   </div>
 
-  <nav class="mk-nav" id="mainNav" aria-label="मुख्य मेनू">
-    <button type="button" class="mk-nav-btn mk-nav-btn--active" data-panel="entry">📝 एंट्री</button>
-    <button type="button" class="mk-nav-btn" data-panel="ledger">📒 लेजर</button>
-    <button type="button" class="mk-nav-btn" data-panel="receipt">🧾 रसीद</button>
-    <button type="button" class="mk-nav-btn" data-panel="buyers">👥 खरीदार</button>
-    <button type="button" class="mk-nav-btn" data-panel="settings">⚙️ सेटिंग्स</button>
+  <nav class="mk-nav" id="mainNav" aria-label="Main menu">
+    <button type="button" class="mk-nav-btn mk-nav-btn--active" data-panel="entry">📝 Entry</button>
+    <button type="button" class="mk-nav-btn" data-panel="ledger">📒 Ledger</button>
+    <button type="button" class="mk-nav-btn" data-panel="receipt">🧾 Receipt</button>
+    <button type="button" class="mk-nav-btn" data-panel="buyers">👥 Buyers</button>
+    <button type="button" class="mk-nav-btn" data-panel="settings">⚙️ Settings</button>
   </nav>
 
   <!-- ========== ENTRY ========== -->
   <section class="mk-panel mk-panel--active" id="panel-entry">
     <div class="mk-panel-head">
       <div>
-        <h2>मासिक एंट्री</h2>
-        <p>सिर्फ रोज़ का दूध — दर और बकाया खरीदार टैब में</p>
+        <h2>Monthly Entry</h2>
+        <p>Daily milk only — rate and balances are on the Buyers tab</p>
       </div>
       <div class="mk-toolbar">
-        <label class="mk-tip" for="entryMonth">महीना</label>
+        <label class="mk-tip" for="entryMonth">Month</label>
         <input type="month" id="entryMonth" class="mk-input-inline">
-        <button type="button" class="mk-btn mk-btn--primary mk-btn--sm" id="jumpTodayBtn">✍️ आज का दूध लिखें</button>
+        <button type="button" class="mk-btn mk-btn--primary mk-btn--sm" id="jumpTodayBtn">✍️ Enter today's milk</button>
       </div>
     </div>
     <div id="entryGridHost"></div>
@@ -51,12 +51,12 @@
   <section class="mk-panel" id="panel-ledger">
     <div class="mk-panel-head">
       <div>
-        <h2>मासिक लेजर</h2>
-        <p>पूरा रजिस्टर — प्रिंट / PDF (लैंडस्केप)</p>
+        <h2>Monthly Ledger</h2>
+        <p>Full register — Print / PDF (landscape)</p>
       </div>
       <div class="mk-toolbar">
         <input type="month" id="ledgerMonth" class="mk-input-inline">
-        <button type="button" class="mk-btn mk-btn--primary" id="printLedgerBtn">🖨️ प्रिंट / PDF</button>
+        <button type="button" class="mk-btn mk-btn--primary" id="printLedgerBtn">🖨️ Print / PDF</button>
       </div>
     </div>
     <div id="ledgerHost" class="mk-ledger-print"></div>
@@ -66,33 +66,33 @@
   <section class="mk-panel" id="panel-receipt">
     <div class="mk-panel-head">
       <div>
-        <h2>ग्राहक रसीद</h2>
-        <p>खरीदार और महीना चुनकर रसीद बनाएं</p>
+        <h2>Customer Receipt</h2>
+        <p>Pick a buyer and month to generate a receipt</p>
       </div>
     </div>
     <div class="mk-grid">
       <div class="mk-form">
         <div class="mk-field">
-          <label for="receiptBuyer">खरीदार</label>
+          <label for="receiptBuyer">Buyer</label>
           <select id="receiptBuyer"></select>
         </div>
         <div class="mk-field">
-          <label for="receiptMonth">महीना</label>
+          <label for="receiptMonth">Month</label>
           <input type="month" id="receiptMonth">
         </div>
         <div id="receiptFormError" class="mk-error"></div>
         <div class="mk-actions">
-          <button type="button" id="generateBtn" class="mk-btn mk-btn--primary">रसीद बनाएं</button>
+          <button type="button" id="generateBtn" class="mk-btn mk-btn--primary">Generate receipt</button>
         </div>
       </div>
       <div class="mk-receipt-wrap">
         <div id="receiptOutput">
-          <div class="mk-placeholder">यहाँ आपकी रसीद बनकर दिखेगी 🧾</div>
+          <div class="mk-placeholder">Your receipt will appear here 🧾</div>
         </div>
         <div id="receiptActions" class="mk-receipt-actions">
-          <button type="button" id="copyBtn" class="mk-btn mk-btn--primary">📋 WhatsApp टेक्स्ट कॉपी</button>
-          <button type="button" id="shareImgBtn" class="mk-btn mk-btn--ghost">📷 स्क्रीनशॉट शेयर</button>
-          <button type="button" id="printReceiptBtn" class="mk-btn mk-btn--ghost">🖨️ प्रिंट</button>
+          <button type="button" id="copyBtn" class="mk-btn mk-btn--primary">📋 Copy WhatsApp text</button>
+          <button type="button" id="shareImgBtn" class="mk-btn mk-btn--ghost">📷 Share screenshot</button>
+          <button type="button" id="printReceiptBtn" class="mk-btn mk-btn--ghost">🖨️ Print</button>
         </div>
       </div>
     </div>
@@ -102,31 +102,31 @@
   <section class="mk-panel" id="panel-buyers">
     <div class="mk-panel-head">
       <div>
-        <h2>खरीदार सूची</h2>
-        <p>नाम, दर, पिछला बकाया — दूध एंट्री अलग टैब में</p>
+        <h2>Buyers</h2>
+        <p>Name, rate, previous balance — milk entry is on the Entry tab</p>
       </div>
       <div class="mk-toolbar">
-        <label class="mk-tip" for="buyersMonth">महीने का बकाया</label>
+        <label class="mk-tip" for="buyersMonth">Balance for month</label>
         <input type="month" id="buyersMonth" class="mk-input-inline">
       </div>
     </div>
     <div class="mk-form" style="margin-bottom:16px;">
       <div class="mk-field">
-        <label for="newBuyerName">एक खरीदार जोड़ें</label>
-        <input id="newBuyerName" type="text" placeholder="जैसे: सुखबीर">
-        <p class="mk-tip">दर सेटिंग्स की डिफ़ॉल्ट दर से लगेगी। अलग दर हो तो जोड़ने के बाद <b>संपादित</b> करें।</p>
+        <label for="newBuyerName">Add one buyer</label>
+        <input id="newBuyerName" type="text" placeholder="e.g. सुखबीर">
+        <p class="mk-tip">Rate comes from Settings default. If a buyer needs a different rate, <b>Edit</b> after adding.</p>
       </div>
       <div class="mk-actions">
-        <button type="button" id="addBuyerBtn" class="mk-btn mk-btn--primary">+ जोड़ें</button>
+        <button type="button" id="addBuyerBtn" class="mk-btn mk-btn--primary">+ Add</button>
       </div>
       <div class="mk-field" style="margin-top:16px;">
-        <label for="pasteBuyers">सूची पेस्ट करें <small>(एक नाम प्रति पंक्ति)</small></label>
+        <label for="pasteBuyers">Paste list <small>(one name per line)</small></label>
         <textarea id="pasteBuyers" rows="6" placeholder="सुखबीर&#10;राम&#10;गीता&#10;..."></textarea>
-        <p class="mk-tip" id="pasteBuyersTip">सभी पर सेटिंग्स की डिफ़ॉल्ट दर लगेगी। पहले से मौजूद नाम छोड़ दिए जाएँगे।</p>
+        <p class="mk-tip" id="pasteBuyersTip">All get the Settings default rate. Existing names are skipped.</p>
       </div>
       <div class="mk-actions">
-        <button type="button" id="pasteBuyersBtn" class="mk-btn mk-btn--primary">📋 सूची से जोड़ें</button>
-        <button type="button" id="pasteClipboardBtn" class="mk-btn mk-btn--ghost">क्लिपबोर्ड से पेस्ट</button>
+        <button type="button" id="pasteBuyersBtn" class="mk-btn mk-btn--primary">📋 Add from list</button>
+        <button type="button" id="pasteClipboardBtn" class="mk-btn mk-btn--ghost">Paste from clipboard</button>
       </div>
       <div id="buyerError" class="mk-error"></div>
     </div>
@@ -137,41 +137,41 @@
   <section class="mk-panel" id="panel-settings">
     <div class="mk-panel-head">
       <div>
-        <h2>सेटिंग्स</h2>
-        <p>फार्म पहचान और बैकअप</p>
+        <h2>Settings</h2>
+        <p>Farm identity and backup</p>
       </div>
     </div>
     <div class="mk-form" style="margin-bottom:18px;">
       <div class="mk-field">
-        <label for="setFarmName">फार्म का नाम</label>
+        <label for="setFarmName">Farm name</label>
         <input id="setFarmName" type="text" placeholder="Your Dairy Farm">
       </div>
       <div class="mk-field">
-        <label for="setTagline">टैगलाइन</label>
+        <label for="setTagline">Tagline</label>
         <input id="setTagline" type="text" placeholder="जय दादा बिशादे की">
       </div>
       <div class="mk-field-row">
         <div class="mk-field">
-          <label for="setContact">संपर्क मोबाइल</label>
+          <label for="setContact">Contact mobile</label>
           <input id="setContact" type="text" placeholder="999999999">
         </div>
         <div class="mk-field">
-          <label for="setPayment">UPI / भुगतान नंबर <small>— खाली हो तो संपर्क नंबर</small></label>
-          <input id="setPayment" type="text" placeholder="999999999 या UPI ID">
+          <label for="setPayment">UPI / payment number <small>— uses contact if blank</small></label>
+          <input id="setPayment" type="text" placeholder="999999999 or UPI ID">
         </div>
       </div>
       <div class="mk-field">
-        <label for="setDefaultRate">डिफ़ॉल्ट दूध दर (₹/ली.)</label>
+        <label for="setDefaultRate">Default milk rate (₹/L)</label>
         <input id="setDefaultRate" type="number" step="0.5" min="0" value="80">
       </div>
-      <p class="mk-tip">बदलाव तुरंत सेव होते हैं (localStorage)।</p>
+      <p class="mk-tip">Changes save immediately (localStorage).</p>
     </div>
 
     <div class="mk-card">
-      <h3 style="margin:0 0 10px;font-family:'Zilla Slab',Georgia,serif;color:var(--red-deep);font-size:16px;">बैकअप · Export / Import</h3>
+      <h3 style="margin:0 0 10px;font-family:'Zilla Slab',Georgia,serif;color:var(--red-deep);font-size:16px;">Backup · Export / Import</h3>
       <div class="mk-warn-box">
-        ⚠️ सारा डेटा सिर्फ इस ब्राउज़र में रहता है। फ़ोन और लैपटॉप अलग-अलग डेटा रखेंगे।
-        ब्राउज़र कैश साफ़ करने से सब मिट सकता है — नियमित JSON बैकअप ज़रूर लें।
+        ⚠️ All data stays only in this browser. Phone and laptop keep separate copies.
+        Clearing browser cache can erase everything — export JSON backups regularly.
       </div>
       <div class="mk-actions">
         <button type="button" id="exportBtn" class="mk-btn mk-btn--primary">⬇️ JSON Export</button>
@@ -181,13 +181,13 @@
     </div>
 
     <div class="mk-card" style="margin-top:16px;">
-      <h3 style="margin:0 0 10px;font-family:'Zilla Slab',Georgia,serif;color:var(--red-deep);font-size:16px;">डेटा साफ़ करें</h3>
+      <h3 style="margin:0 0 10px;font-family:'Zilla Slab',Georgia,serif;color:var(--red-deep);font-size:16px;">Clear data</h3>
       <div class="mk-warn-box">
-        Safari में साइट कैश साफ़ करना मुश्किल हो सकता है। यह बटन इस ऐप का सारा सेव्ड डेटा मिटा देगा
-        (खरीदार, एंट्री, सेटिंग्स)। पहले Export लेना सुरक्षित है।
+        Safari makes site cache hard to clear. This button deletes all saved app data
+        (buyers, entries, settings). Export first if you need a backup.
       </div>
       <div class="mk-actions">
-        <button type="button" id="clearDataBtn" class="mk-btn mk-btn--danger">🗑️ सारा डेटा मिटाएँ / कैश साफ़</button>
+        <button type="button" id="clearDataBtn" class="mk-btn mk-btn--danger">🗑️ Clear all data / cache</button>
       </div>
     </div>
   </section>
@@ -197,28 +197,28 @@
 <!-- Edit buyer modal -->
 <div class="mk-modal-backdrop" id="buyerModal" role="dialog" aria-modal="true">
   <div class="mk-modal">
-    <h3>खरीदार संपादित करें</h3>
+    <h3>Edit buyer</h3>
     <input type="hidden" id="editBuyerId">
     <div class="mk-field">
-      <label for="editBuyerName">नाम</label>
+      <label for="editBuyerName">Name</label>
       <input id="editBuyerName" type="text">
     </div>
     <div class="mk-field">
-      <label for="editBuyerRate">दर (₹/ली.)</label>
+      <label for="editBuyerRate">Rate (₹/L)</label>
       <input id="editBuyerRate" type="number" step="0.5" min="0">
-      <p class="mk-tip">इस महीने की दर भी अपडेट होगी।</p>
+      <p class="mk-tip">Also updates this month’s rate.</p>
     </div>
     <div class="mk-field">
-      <label for="editBuyerOpening">पिछला बकाया (₹) <small>— चुने हुए महीने के लिए</small></label>
+      <label for="editBuyerOpening">Previous balance (₹) <small>— for selected month</small></label>
       <input id="editBuyerOpening" type="number" step="1" value="0">
     </div>
     <div class="mk-field">
-      <label for="editBuyerAdj">समायोजन ± (₹)</label>
+      <label for="editBuyerAdj">Adjustment ± (₹)</label>
       <input id="editBuyerAdj" type="number" step="1" value="0">
     </div>
     <div class="mk-actions">
-      <button type="button" id="saveBuyerBtn" class="mk-btn mk-btn--primary">सेव करें</button>
-      <button type="button" id="cancelBuyerBtn" class="mk-btn mk-btn--ghost">रद्द</button>
+      <button type="button" id="saveBuyerBtn" class="mk-btn mk-btn--primary">Save</button>
+      <button type="button" id="cancelBuyerBtn" class="mk-btn mk-btn--ghost">Cancel</button>
     </div>
   </div>
 </div>

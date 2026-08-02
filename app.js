@@ -5,9 +5,9 @@
   const LEGACY_NAME = 'mk_farmName';
   const LEGACY_MOBILE = 'mk_farmMobile';
 
-  const HINDI_MONTHS = [
-    'जनवरी', 'फरवरी', 'मार्च', 'अप्रैल', 'मई', 'जून',
-    'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर'
+  const MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
   const $ = (id) => document.getElementById(id);
@@ -47,9 +47,9 @@
     return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
   }
 
-  function hindiMonthLabel(ym) {
+  function monthLabel(ym) {
     const { year, month } = parseYearMonth(ym);
-    return HINDI_MONTHS[month] + ' ' + year;
+    return MONTH_NAMES[month] + ' ' + year;
   }
 
   function prevYM(ym) {
@@ -258,7 +258,7 @@
 
   function updateBrandSubtitle() {
     const el = $('brandSubtitle');
-    if (el) el.textContent = (DB.settings.farmName || 'दूध बिल · मासिक खाता');
+    if (el) el.textContent = (DB.settings.farmName || 'Milk bill · Monthly ledger');
   }
 
   function bindSettings() {
@@ -289,7 +289,7 @@
     const tip = $('pasteBuyersTip');
     if (!tip) return;
     const rate = DB.settings.defaultRate || 80;
-    tip.textContent = `सभी पर सेटिंग्स की डिफ़ॉल्ट दर ₹${fmtNum(rate)}/ली. लगेगी। अलग दर हो तो संपादित करें। पहले से मौजूद नाम छोड़ दिए जाएँगे।`;
+    tip.textContent = `All get the Settings default rate ₹${fmtNum(rate)}/L. Edit a buyer for a different rate. Existing names are skipped.`;
   }
 
   function normalizeBuyerName(name) {
@@ -350,8 +350,8 @@
     if (!buyers.length) {
       list.innerHTML = `
         <div class="mk-empty-cta">
-          <h3>अभी कोई खरीदार नहीं</h3>
-          <p>ऊपर एक नाम जोड़ें, या पूरी सूची पेस्ट करके <b>सूची से जोड़ें</b> दबाएँ। दर सेटिंग्स से लगेगी।</p>
+          <h3>No buyers yet</h3>
+          <p>Add a name above, or paste a list and click <b>Add from list</b>. Rate comes from Settings.</p>
         </div>`;
       return;
     }
@@ -374,24 +374,24 @@
       <div class="mk-buyer-item ${b.active ? '' : 'mk-buyer-item--inactive'}" data-id="${escapeHtml(b.id)}">
         <div class="mk-buyer-info">
           <strong>${escapeHtml(b.name)}</strong>
-          <span>${b.active ? 'सक्रिय' : 'निष्क्रिय'} · ${escapeHtml(hindiMonthLabel(ym))} · ${fmtNum(c.total)} ली · NET ${fmtRupee(c.net)}</span>
+          <span>${b.active ? 'Active' : 'Inactive'} · ${escapeHtml(monthLabel(ym))} · ${fmtNum(c.total)} L · NET ${fmtRupee(c.net)}</span>
         </div>
         <div class="mk-buyer-finance">
-          <label>दर ₹
+          <label>Rate ₹
             <input type="number" step="0.5" min="0" inputmode="decimal" data-fin="rate" value="${fmtNum(rateVal)}" ${b.active ? '' : 'disabled'}>
           </label>
-          <label>पिछला बकाया
+          <label>Prev. balance
             <input type="number" step="1" inputmode="decimal" data-fin="openingBalance" value="${fmtNum(openingVal)}" ${b.active && monthData.buyers[b.id] ? '' : 'disabled'}>
           </label>
-          <label>समायोजन ±
+          <label>Adjustment ±
             <input type="number" step="1" inputmode="decimal" data-fin="adjustment" value="${fmtNum(adjVal)}" ${b.active && monthData.buyers[b.id] ? '' : 'disabled'}>
           </label>
         </div>
         <div class="mk-buyer-actions">
           <button type="button" class="mk-btn mk-btn--ghost mk-btn--sm" data-act="up" ${idx === 0 ? 'disabled' : ''}>↑</button>
           <button type="button" class="mk-btn mk-btn--ghost mk-btn--sm" data-act="down" ${idx === buyers.length - 1 ? 'disabled' : ''}>↓</button>
-          <button type="button" class="mk-btn mk-btn--ghost mk-btn--sm" data-act="edit">संपादित</button>
-          <button type="button" class="mk-btn mk-btn--danger mk-btn--sm" data-act="toggle">${b.active ? 'हटाएँ' : 'वापस लाएँ'}</button>
+          <button type="button" class="mk-btn mk-btn--ghost mk-btn--sm" data-act="edit">Edit</button>
+          <button type="button" class="mk-btn mk-btn--danger mk-btn--sm" data-act="toggle">${b.active ? 'Remove' : 'Restore'}</button>
         </div>
       </div>`;
     }).join('');
@@ -405,35 +405,35 @@
     $('addBuyerBtn').addEventListener('click', () => {
       const name = normalizeBuyerName($('newBuyerName').value);
       const err = $('buyerError');
-      if (!name) { err.textContent = 'कृपया नाम लिखें।'; return; }
+      if (!name) { err.textContent = 'Please enter a name.'; return; }
       err.textContent = '';
       const result = addBuyersFromNames([name]);
       if (result.added === 0) {
-        err.textContent = 'यह खरीदार पहले से सूची में है।';
+        err.textContent = 'This buyer is already in the list.';
         return;
       }
       $('newBuyerName').value = '';
       renderBuyers();
-      showToast('खरीदार जोड़ा गया ✅ (दर ₹' + fmtNum(result.rate) + ')');
+      showToast('Buyer added ✅ (rate ₹' + fmtNum(result.rate) + ')');
     });
 
     $('pasteBuyersBtn').addEventListener('click', () => {
       const names = parseBuyerNames($('pasteBuyers').value);
       const err = $('buyerError');
       if (!names.length) {
-        err.textContent = 'कृपया नामों की सूची पेस्ट करें (एक पंक्ति में एक नाम)।';
+        err.textContent = 'Please paste a list of names (one per line).';
         return;
       }
       err.textContent = '';
       const result = addBuyersFromNames(names);
       if (result.added === 0) {
-        err.textContent = 'कोई नया नाम नहीं मिला — सभी पहले से मौजूद हैं।';
+        err.textContent = 'No new names found — all already exist.';
         return;
       }
       $('pasteBuyers').value = '';
       renderBuyers();
-      let msg = result.added + ' खरीदार जोड़े गए (दर ₹' + fmtNum(result.rate) + ')';
-      if (result.skipped) msg += ' · ' + result.skipped + ' छोड़ा';
+      let msg = result.added + ' buyer(s) added (rate ₹' + fmtNum(result.rate) + ')';
+      if (result.skipped) msg += ' · ' + result.skipped + ' skipped';
       showToast(msg + ' ✅');
     });
 
@@ -442,7 +442,7 @@
       err.textContent = '';
       try {
         if (!navigator.clipboard || !navigator.clipboard.readText) {
-          err.textContent = 'क्लिपबोर्ड उपलब्ध नहीं — सूची बॉक्स में पेस्ट करें (Ctrl/Cmd+V)।';
+          err.textContent = 'Clipboard unavailable — paste into the list box (Ctrl/Cmd+V).';
           $('pasteBuyers').focus();
           return;
         }
@@ -450,12 +450,12 @@
         $('pasteBuyers').value = text;
         const names = parseBuyerNames(text);
         if (!names.length) {
-          err.textContent = 'क्लिपबोर्ड में कोई नाम नहीं मिला।';
+          err.textContent = 'No names found on the clipboard.';
           return;
         }
-        showToast(names.length + ' नाम मिले — अब «सूची से जोड़ें» दबाएँ');
+        showToast(names.length + ' name(s) found — click «Add from list»');
       } catch (e) {
-        err.textContent = 'क्लिपबोर्ड पढ़ नहीं पाए — सूची बॉक्स में पेस्ट करें (Ctrl/Cmd+V)।';
+        err.textContent = 'Could not read clipboard — paste into the list box (Ctrl/Cmd+V).';
         $('pasteBuyers').focus();
       }
     });
@@ -486,7 +486,7 @@
         buyers[idx].active = !buyers[idx].active;
         saveData(DB);
         renderBuyers();
-        showToast(buyers[idx].active ? 'खरीदार सक्रिय ✅' : 'खरीदार निष्क्रिय (इतिहास सुरक्षित)');
+        showToast(buyers[idx].active ? 'Buyer active ✅' : 'Buyer inactive (history kept)');
       }
       if (act === 'edit') {
         const ym = ($('buyersMonth') && $('buyersMonth').value) || currentYM();
@@ -531,7 +531,7 @@
       const c = calcBuyer(entry);
       const info = item.querySelector('.mk-buyer-info span');
       if (info) {
-        info.textContent = `सक्रिय · ${hindiMonthLabel(ym)} · ${fmtNum(c.total)} ली · NET ${fmtRupee(c.net)}`;
+        info.textContent = `Active · ${monthLabel(ym)} · ${fmtNum(c.total)} L · NET ${fmtRupee(c.net)}`;
       }
     });
 
@@ -550,7 +550,7 @@
       const opening = parseFloat($('editBuyerOpening').value) || 0;
       const adj = parseFloat($('editBuyerAdj').value) || 0;
       if (!name || !rate || rate <= 0) {
-        showToast('नाम और दर सही भरें');
+        showToast('Enter a valid name and rate');
         return;
       }
       b.name = name;
@@ -565,7 +565,7 @@
       saveData(DB);
       $('buyerModal').classList.remove('mk-modal-backdrop--show');
       renderBuyers();
-      showToast('सेव हो गया ✅');
+      showToast('Saved ✅');
     });
   }
 
@@ -586,11 +586,11 @@
     if (!buyers.length) {
       $('entryGridHost').innerHTML = `
         <div class="mk-empty-cta">
-          <h3>दूध एंट्री शुरू करें</h3>
-          <p>पहले खरीदार जोड़ें, फिर यहाँ रोज़ की मात्रा लिख सकेंगे।<br>
-          सेल पर टैप करें → नंबर भरें → Enter से अगले खरीदार पर जाएँ।</p>
+          <h3>Start milk entry</h3>
+          <p>Add buyers first, then enter daily quantities here.<br>
+          Tap a cell → type litres → Enter moves to the next buyer.</p>
           <div class="mk-actions">
-            <button type="button" class="mk-btn mk-btn--primary" id="goAddBuyersBtn">+ खरीदार जोड़ें</button>
+            <button type="button" class="mk-btn mk-btn--primary" id="goAddBuyersBtn">+ Add buyers</button>
           </div>
         </div>`;
       $('entryTotals').innerHTML = '';
@@ -602,8 +602,8 @@
     }
 
     // Grid
-    let html = '<p class="mk-entry-tip">💡 खाली सेल पर टैप करके लीटर लिखें। दर / बकाया <b>खरीदार</b> टैब में सेट करें। Enter/Tab = अगला खरीदार।</p>';
-    html += '<div class="mk-grid-scroll"><table class="mk-entry-table"><thead><tr><th>तारीख</th>';
+    let html = '<p class="mk-entry-tip">💡 Tap an empty cell to enter litres. Set rate / balance on the <b>Buyers</b> tab. Enter/Tab = next buyer.</p>';
+    html += '<div class="mk-grid-scroll"><table class="mk-entry-table"><thead><tr><th>Date</th>';
     buyers.forEach((b) => {
       html += `<th class="mk-col-buyer">${escapeHtml(b.name)}</th>`;
     });
@@ -624,7 +624,7 @@
     }
 
     // Footer totals (litres only on entry — money lives with buyers/ledger)
-    html += '<tr class="mk-footer-row"><td>कुल</td>';
+    html += '<tr class="mk-footer-row"><td>Total</td>';
     let farmLitres = 0;
     buyers.forEach((b) => {
       const c = calcBuyer(monthData.buyers[b.id]);
@@ -635,8 +635,8 @@
     $('entryGridHost').innerHTML = html;
 
     $('entryTotals').innerHTML =
-      `<span>कुल दूध: <b>${fmtNum(farmLitres)} ली.</b></span>` +
-      `<span class="mk-tip">दर और बकाया → खरीदार टैब</span>`;
+      `<span>Total milk: <b>${fmtNum(farmLitres)} L</b></span>` +
+      `<span class="mk-tip">Rate & balance → Buyers tab</span>`;
   }
 
   function refreshEntryFooter() {
@@ -653,8 +653,8 @@
       if (footerCells[i + 1]) footerCells[i + 1].textContent = fmtNum(c.total);
     });
     $('entryTotals').innerHTML =
-      `<span>कुल दूध: <b>${fmtNum(farmLitres)} ली.</b></span>` +
-      `<span class="mk-tip">दर और बकाया → खरीदार टैब</span>`;
+      `<span>Total milk: <b>${fmtNum(farmLitres)} L</b></span>` +
+      `<span class="mk-tip">Rate & balance → Buyers tab</span>`;
   }
 
   function bindEntry() {
@@ -664,7 +664,7 @@
       renderEntry();
       if (!buyersForMonth(ym).length) {
         showPanel('buyers');
-        showToast('पहले खरीदार जोड़ें');
+        showToast('Add buyers first');
         return;
       }
       const today = new Date().getDate();
@@ -677,7 +677,7 @@
           firstInput.select();
         }
       }
-      showToast('आज की पंक्ति तैयार — दूध लिखें');
+      showToast("Today's row ready — enter milk");
     });
 
     $('entryGridHost').addEventListener('input', (e) => {
@@ -751,7 +751,7 @@
     const host = $('ledgerHost');
 
     if (!buyers.length) {
-      host.innerHTML = '<div class="mk-empty">कोई सक्रिय खरीदार नहीं</div>';
+      host.innerHTML = '<div class="mk-empty">No active buyers</div>';
       return;
     }
 
@@ -759,10 +759,10 @@
     let html = `<div class="mk-ledger-wrap">
       <div class="mk-ledger-header">
         <div class="mk-receipt-shri">${escapeHtml(s.tagline || 'जय दादा बिशादे की')}</div>
-        <h3>${escapeHtml(s.farmName || 'डेयरी फार्म')}</h3>
-        <p>${s.contactMobile ? '📞 ' + escapeHtml(s.contactMobile) + ' · ' : ''}${escapeHtml(hindiMonthLabel(ym))}</p>
+        <h3>${escapeHtml(s.farmName || 'Dairy Farm')}</h3>
+        <p>${s.contactMobile ? '📞 ' + escapeHtml(s.contactMobile) + ' · ' : ''}${escapeHtml(monthLabel(ym))}</p>
       </div>
-      <table class="mk-ledger-table"><thead><tr><th>तारीख</th>`;
+      <table class="mk-ledger-table"><thead><tr><th>Date</th>`;
 
     buyers.forEach((b) => {
       html += `<th class="mk-col-buyer">${escapeHtml(b.name)}</th>`;
@@ -808,9 +808,9 @@
 
     html += '</tbody></table>';
     html += `<div class="mk-totals-bar" style="margin-top:10px;">
-      <span>कुल दूध: <b>${fmtNum(farmLitres)} ली.</b></span>
-      <span>कुल Amount: <b>${fmtRupee(farmAmount)}</b></span>
-      <span>कुल NET: <b>${fmtRupee(farmNet)}</b></span>
+      <span>Total milk: <b>${fmtNum(farmLitres)} L</b></span>
+      <span>Total Amount: <b>${fmtRupee(farmAmount)}</b></span>
+      <span>Total NET: <b>${fmtRupee(farmNet)}</b></span>
     </div></div>`;
 
     host.innerHTML = html;
@@ -860,8 +860,8 @@
 
     const prev = sel.value;
     sel.innerHTML = options.length
-      ? options.map((b) => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.name)}${b.active ? '' : ' (निष्क्रिय)'}</option>`).join('')
-      : '<option value="">— कोई खरीदार नहीं —</option>';
+      ? options.map((b) => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.name)}${b.active ? '' : ' (inactive)'}</option>`).join('')
+      : '<option value="">— No buyers —</option>';
     if (prev && options.some((b) => b.id === prev)) sel.value = prev;
   }
 
@@ -883,24 +883,24 @@
       const startDay = i + 1;
       const endDay = i + chunk.length;
       weeks.push({
-        label: 'सप्ताह ' + (weeks.length + 1),
+        label: 'Week ' + (weeks.length + 1),
         range: startDay + '–' + endDay,
         total: chunk.reduce((a, b) => a + b, 0),
         days: chunk.map((qty, j) => ({ date: startDay + j, qty }))
       });
     }
 
-    // Receipt balance line = opening + adjustment (matches old single "पिछला बकाया" field)
+    // Receipt balance line = opening + adjustment (matches old single previous-balance field)
     const balance = c.opening + c.adj;
     const pay = paymentNumber();
 
     return {
-      farmName: DB.settings.farmName.trim() || 'डेयरी फार्म',
+      farmName: DB.settings.farmName.trim() || 'Dairy Farm',
       farmMobile: (DB.settings.contactMobile || '').trim(),
       paymentNumber: pay,
       tagline: DB.settings.tagline || 'जय दादा बिशादे की',
       custName: buyer.name,
-      monthYear: hindiMonthLabel(ym),
+      monthYear: monthLabel(ym),
       rate: c.rate,
       balance,
       weeks,
@@ -919,7 +919,7 @@
         <span class="mk-day-qty ${d.qty === 0 ? 'mk-day-qty--zero' : 'mk-day-qty--milk'}">${fmtNum(d.qty)}</span>
       </div>`).join('');
     const weekTotals = r.weeks.map((w) =>
-      `<span><b>${w.label}</b>: ${fmtNum(w.total)} ली.</span>`
+      `<span><b>${w.label}</b>: ${fmtNum(w.total)} L</span>`
     ).join('');
 
     const payNum = r.paymentNumber || r.farmMobile;
@@ -931,37 +931,37 @@
         ${r.farmMobile ? `<div class="mk-receipt-mobile">📞 ${escapeHtml(r.farmMobile)}</div>` : ''}
         <div class="mk-receipt-divider"></div>
         <div class="mk-row mk-row--head">
-          <span class="mk-row-label">ग्राहक</span>
+          <span class="mk-row-label">Customer</span>
           <span class="mk-row-value">${escapeHtml(r.custName)}</span>
         </div>
-        ${r.monthYear ? `<div class="mk-row mk-row--head"><span class="mk-row-label">महीना</span><span class="mk-row-value">${escapeHtml(r.monthYear)}</span></div>` : ''}
+        ${r.monthYear ? `<div class="mk-row mk-row--head"><span class="mk-row-label">Month</span><span class="mk-row-value">${escapeHtml(r.monthYear)}</span></div>` : ''}
         <div class="mk-calendar">${calendarCells}</div>
         <div class="mk-weektotals">${weekTotals}</div>
         <div class="mk-row mk-row--total-milk">
-          <span class="mk-row-label">कुल दूध</span>
-          <span class="mk-row-value">${fmtNum(r.totalMilk)} ली.</span>
+          <span class="mk-row-label">Total milk</span>
+          <span class="mk-row-value">${fmtNum(r.totalMilk)} L</span>
         </div>
         <div class="mk-row">
-          <span class="mk-row-label">दर</span>
-          <span class="mk-row-value">${fmtRupee(r.rate)} / ली.</span>
+          <span class="mk-row-label">Rate</span>
+          <span class="mk-row-value">${fmtRupee(r.rate)} / L</span>
         </div>
         <div class="mk-row">
-          <span class="mk-row-label">राशि</span>
+          <span class="mk-row-label">Amount</span>
           <span class="mk-row-value">${fmtRupee(r.amount)}</span>
         </div>
-        ${r.balance !== 0 ? `<div class="mk-row"><span class="mk-row-label">${r.balance > 0 ? 'पिछला बकाया' : 'पिछला एडवांस'}</span><span class="mk-row-value">${fmtRupee(Math.abs(r.balance))}</span></div>` : ''}
+        ${r.balance !== 0 ? `<div class="mk-row"><span class="mk-row-label">${r.balance > 0 ? 'Previous due' : 'Previous advance'}</span><span class="mk-row-value">${fmtRupee(Math.abs(r.balance))}</span></div>` : ''}
         <div class="mk-receipt-divider"></div>
         <div class="mk-grandtotal">
-          <span>कुल देय राशि</span>
+          <span>Total payable</span>
           <span>${fmtRupee(r.grandTotal)}</span>
         </div>
         ${payNum ? `
         <div class="mk-upi">
           <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI Logo" class="mk-upi-logo">
-          <span class="mk-upi-text">इस नंबर पर UPI पेमेंट कर सकते हैं</span>
+          <span class="mk-upi-text">Pay via UPI to this number</span>
           <span class="mk-upi-number">${escapeHtml(payNum)}</span>
         </div>` : ''}
-        <div class="mk-receipt-footer">धन्यवाद 🙏</div>
+        <div class="mk-receipt-footer">Thank you 🙏</div>
       </div>
     `;
     $('receiptActions').style.display = 'flex';
@@ -973,11 +973,11 @@
       const buyerId = $('receiptBuyer').value;
       const ym = $('receiptMonth').value;
       const err = $('receiptFormError');
-      if (!buyerId) { err.textContent = 'कृपया खरीदार चुनें।'; return; }
-      if (!ym) { err.textContent = 'कृपया महीना चुनें।'; return; }
+      if (!buyerId) { err.textContent = 'Please select a buyer.'; return; }
+      if (!ym) { err.textContent = 'Please select a month.'; return; }
       err.textContent = '';
       const data = buildReceiptData(buyerId, ym);
-      if (!data) { err.textContent = 'डेटा नहीं मिला।'; return; }
+      if (!data) { err.textContent = 'No data found.'; return; }
       lastReceipt = data;
       renderReceipt(data);
     });
@@ -987,25 +987,25 @@
       const r = lastReceipt;
       let msg = `🥛 *${r.farmName}*\n`;
       if (r.farmMobile) msg += `📞 ${r.farmMobile}\n`;
-      msg += `👤 ग्राहक: ${r.custName}\n`;
-      msg += r.monthYear ? `📅 महीना: ${r.monthYear}\n\n` : `\n`;
+      msg += `👤 Customer: ${r.custName}\n`;
+      msg += r.monthYear ? `📅 Month: ${r.monthYear}\n\n` : `\n`;
       r.weeks.forEach((w) => {
-        msg += `${w.label} (${w.range} तारीख): ${fmtNum(w.total)} ली.\n`;
+        msg += `${w.label} (${w.range}): ${fmtNum(w.total)} L\n`;
       });
-      msg += `\nकुल दूध: ${fmtNum(r.totalMilk)} ली.\n`;
-      msg += `दर: ${fmtRupee(r.rate)}/ली.\n`;
-      msg += `राशि: ${fmtRupee(r.amount)}\n`;
+      msg += `\nTotal milk: ${fmtNum(r.totalMilk)} L\n`;
+      msg += `Rate: ${fmtRupee(r.rate)}/L\n`;
+      msg += `Amount: ${fmtRupee(r.amount)}\n`;
       if (r.balance !== 0) {
-        msg += `${r.balance > 0 ? 'पिछला बकाया' : 'पिछला एडवांस'}: ${fmtRupee(Math.abs(r.balance))}\n`;
+        msg += `${r.balance > 0 ? 'Previous due' : 'Previous advance'}: ${fmtRupee(Math.abs(r.balance))}\n`;
       }
       msg += `━━━━━━━━━━\n`;
-      msg += `✅ *कुल देय राशि: ${fmtRupee(r.grandTotal)}*\n\n`;
-      msg += `धन्यवाद 🙏`;
+      msg += `✅ *Total payable: ${fmtRupee(r.grandTotal)}*\n\n`;
+      msg += `Thank you 🙏`;
 
       navigator.clipboard.writeText(msg).then(() => {
-        showToast('WhatsApp के लिए कॉपी हो गया ✅');
+        showToast('Copied for WhatsApp ✅');
       }).catch(() => {
-        showToast('कॉपी नहीं हो पाया — दोबारा कोशिश करें');
+        showToast('Copy failed — try again');
       });
     });
 
@@ -1028,10 +1028,10 @@
     $('shareImgBtn').addEventListener('click', async () => {
       const card = $('receiptCard');
       if (!card || typeof html2canvas !== 'function') {
-        showToast('स्क्रीनशॉट उपलब्ध नहीं');
+        showToast('Screenshot not available');
         return;
       }
-      showToast('छवि बन रही है…');
+      showToast('Creating image…');
       try {
         const canvas = await html2canvas(card, {
           backgroundColor: '#fffdf8',
@@ -1040,7 +1040,7 @@
           logging: false
         });
         const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-        if (!blob) { showToast('छवि नहीं बनी'); return; }
+        if (!blob) { showToast('Could not create image'); return; }
 
         const file = new File([blob], `milk-khata-${(lastReceipt && lastReceipt.custName) || 'receipt'}.png`, {
           type: 'image/png'
@@ -1049,10 +1049,10 @@
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
-            title: 'Milk Khata रसीद',
-            text: lastReceipt ? `${lastReceipt.custName} — ${lastReceipt.monthYear}` : 'रसीद'
+            title: 'Milk Khata receipt',
+            text: lastReceipt ? `${lastReceipt.custName} — ${lastReceipt.monthYear}` : 'Receipt'
           });
-          showToast('शेयर शीट खोली गई ✅');
+          showToast('Share sheet opened ✅');
         } else {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -1062,12 +1062,12 @@
           a.click();
           a.remove();
           URL.revokeObjectURL(url);
-          showToast('PNG डाउनलोड हो गया ✅');
+          showToast('PNG downloaded ✅');
         }
       } catch (err) {
         if (err && err.name === 'AbortError') return;
         console.error(err);
-        showToast('शेयर नहीं हो पाया');
+        showToast('Share failed');
       }
     });
   }
@@ -1085,7 +1085,7 @@
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      showToast('बैकअप डाउनलोड हो गया ✅');
+      showToast('Backup downloaded ✅');
     });
 
     $('importBtn').addEventListener('click', () => $('importFile').click());
@@ -1098,10 +1098,10 @@
         try {
           const parsed = JSON.parse(reader.result);
           if (!parsed || !parsed.settings || !Array.isArray(parsed.buyers) || !parsed.months) {
-            showToast('अमान्य बैकअप फ़ाइल');
+            showToast('Invalid backup file');
             return;
           }
-          if (!confirm('मौजूदा डेटा बदल जाएगा। जारी रखें?')) return;
+          if (!confirm('This will replace your current data. Continue?')) return;
           DB = parsed;
           saveData(DB);
           renderSettings();
@@ -1109,9 +1109,9 @@
           renderEntry();
           renderLedger();
           renderReceiptForm();
-          showToast('इम्पोर्ट सफल ✅');
+          showToast('Import successful ✅');
         } catch (err) {
-          showToast('फ़ाइल पढ़ नहीं पाए');
+          showToast('Could not read file');
         }
         e.target.value = '';
       };
@@ -1120,11 +1120,11 @@
 
     $('clearDataBtn').addEventListener('click', () => {
       const ok = confirm(
-        'सारा Milk Khata डेटा मिट जाएगा (खरीदार, एंट्री, सेटिंग्स)।\n\n' +
-        'अगर बैकअप नहीं लिया, पहले Cancel दबाकर Export करें।\n\nक्या सच में मिटाना है?'
+        'All Milk Khata data will be deleted (buyers, entries, settings).\n\n' +
+        'If you have not exported a backup, press Cancel and Export first.\n\nDelete everything?'
       );
       if (!ok) return;
-      const ok2 = confirm('आखिरी पुष्टि: डेटा हमेशा के लिए मिट जाएगा।');
+      const ok2 = confirm('Final confirmation: data will be permanently deleted.');
       if (!ok2) return;
       try {
         localStorage.removeItem(STORAGE_KEY);
@@ -1135,7 +1135,7 @@
           if (k.indexOf('mk_') === 0) localStorage.removeItem(k);
         });
       } catch (e) { /* ignore */ }
-      showToast('डेटा साफ़ हो गया — रीलोड…');
+      showToast('Data cleared — reloading…');
       setTimeout(() => { window.location.reload(); }, 400);
     });
   }
