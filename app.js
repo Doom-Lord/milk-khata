@@ -1143,11 +1143,12 @@
         const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
         registerPdfFont(pdf, b64);
         drawLedgerVectorPdf(pdf, ym, buyers);
-        pdf.save(`milk-khata-ledger-${ym}.pdf`);
-        showToast('PDF downloaded ✅');
+        // Always exactly one landscape A4 page (vector text/lines — no images)
+        pdf.save(`milk-khata-ledger-${ym}-vector-A4.pdf`);
+        showToast('1-page vector PDF downloaded ✅');
       } catch (err) {
         console.error(err);
-        showToast('PDF failed — try Print instead');
+        showToast('Vector PDF failed — check internet (font load) and retry');
       }
     });
   }
