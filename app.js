@@ -651,7 +651,7 @@
         <div class="mk-empty-cta">
           <h3>Start milk entry</h3>
           <p>Add buyers first, then enter daily quantities here.<br>
-          Tap a cell → type litres → Enter moves to the next buyer.</p>
+          Tap a cell → type litres → Enter moves down that buyer’s column.</p>
           <div class="mk-actions">
             <button type="button" class="mk-btn mk-btn--primary" id="goAddBuyersBtn">+ Add buyers</button>
           </div>
@@ -665,7 +665,7 @@
     }
 
     // Grid
-    let html = '<p class="mk-entry-tip">💡 Tap an empty cell to enter litres. Set rate / balance on the <b>Buyers</b> tab. Enter/Tab = next buyer.</p>';
+    let html = '<p class="mk-entry-tip">💡 Tap a cell to enter litres. <b>Enter</b> = next day same buyer · <b>Tab</b> = next buyer.</p>';
     html += '<div class="mk-grid-scroll"><table class="mk-entry-table"><thead><tr><th>Date</th>';
     buyers.forEach((b) => {
       html += `<th class="mk-col-buyer">${escapeHtml(b.name)}</th>`;
