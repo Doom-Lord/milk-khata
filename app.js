@@ -1199,7 +1199,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'milk-khata-ledger-' + ym + '.md';
+    a.download = 'white-accounts-ledger-' + ym + '.md';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1438,14 +1438,14 @@
         const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
         if (!blob) { showToast('Could not create image'); return; }
 
-        const file = new File([blob], `milk-khata-${(lastReceipt && lastReceipt.custName) || 'receipt'}.png`, {
+        const file = new File([blob], `white-accounts-${(lastReceipt && lastReceipt.custName) || 'receipt'}.png`, {
           type: 'image/png'
         });
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
-            title: 'Milk Khata receipt',
+            title: 'White Accounts receipt',
             text: lastReceipt ? `${lastReceipt.custName} — ${lastReceipt.monthYear}` : 'Receipt'
           });
           showToast('Share sheet opened ✅');
@@ -1476,7 +1476,7 @@
       const a = document.createElement('a');
       const stamp = new Date().toISOString().slice(0, 10);
       a.href = url;
-      a.download = `milk-khata-backup-${stamp}.json`;
+      a.download = `white-accounts-backup-${stamp}.json`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -1516,7 +1516,7 @@
 
     $('clearDataBtn').addEventListener('click', () => {
       const ok = confirm(
-        'All Milk Khata data will be deleted (buyers, entries, settings).\n\n' +
+        'All White Accounts data will be deleted (buyers, entries, settings).\n\n' +
         'If you have not exported a backup, press Cancel and Export first.\n\nDelete everything?'
       );
       if (!ok) return;
